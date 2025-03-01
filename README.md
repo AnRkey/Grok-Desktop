@@ -5,6 +5,8 @@ Grok-Desktop is a Nativefier based desktop application for Windows 10 and 11 tha
 
 ![Screenshot](screenshot.jpg)
 
+[Download Grok-Desktop_Installer.exe](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.0.0-pre/Grok-Desktop_Installer.exe)
+
 ## Prerequisites for use
 - Windows 10 or 11
 - Internet connection.
