@@ -38,7 +38,7 @@ Contact an R key at anrkey@gmail.com
 
 ## Copyright Notice
 I don't own the grok.ico file. I found it online and converted it to a .ico file.
-If you are from X.ai or Grok.com and me using this is a problem, please let me know and I'll remove it. If you are not using this application for private use then I would suggest using a different icon.
+If you are from X.ai or Grok.com and if my use of this artwork is a problem, please let me know and I'll remove it. If you are not using this application for private use then I would suggest using a different icon.
 
 ## Contributing
 Details in CONTRIBUTING.md
