@@ -3,6 +3,8 @@
 ## Description
 Grok-Desktop is a Nativefier based desktop application for Windows 10 and 11 that wraps `grok.com`, allowing desktop application-like access to Grok with support for xAI, Google, and Apple authentication.
 
+![Screenshot](screenshot.jpg)
+
 ## Prerequisites for use
 - Windows 10 or 11
 - Internet connection.
