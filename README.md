@@ -50,21 +50,13 @@ The build script will automatically:
 - Install project dependencies if needed
 - Install electron-builder globally
 - Build the NSIS installer application
+- All build outputs will be placed in the `build` directory.
 
 ## Usage
 - Launch `Grok-Desktop.exe` from the build directory after building.
 - Log in via `grok.com`, using Google, Apple, or xAI authentication as needed.
 - Use the + button in the top toolbar to add new tabs.
 - Click the AOT button in the top right to toggle always-on-top functionality.
-
-## Build Options
-If you want more control over the build process, you can use these npm commands instead of the build script:
-- NSIS Installer: `npm run build-installer` (creates a standard Windows installer)
-- Full Build: `npm run build` (builds both installer and portable versions)
-- Portable: `npm run build-portable` (creates a portable .exe that doesn't require installation)
-- Directory: `npm run build-dir` or `npm run pack` (builds the app without packaging)
-
-All build outputs will be placed in the `build` directory.
 
 ## Troubleshooting
 - If the application fails to start, check that Node.js is properly installed and in your PATH.
