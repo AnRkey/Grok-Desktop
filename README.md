@@ -1,13 +1,14 @@
 # Grok-Desktop v.1.1.0
 
 ## Description
-Grok-Desktop is a Nativefier based desktop application for Windows 10 and 11 that wraps `grok.com`, allowing desktop application-like access to Grok with support for xAI, Google, and Apple authentication.
+Grok-Desktop is an Electron-based desktop application for Windows 10 and 11 that wraps `grok.com`, allowing desktop-application-like access to Grok with support for xAI, Google, and Apple authentication.
 
 ## Features
 - Desktop application wrapper for grok.com
-- Tab functionality for multiple Grok conversations
+- Tabs functionality for multiple Grok conversations
 - Support for xAI, Google, and Apple authentication
 - No menu bar for a cleaner interface
+- Always-on-top function
 
 ## Download
 [Download Grok-Desktop_Installer-v1.1.0.exe](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.1.0/Grok-Desktop_Installer-v1.1.0.exe)
@@ -17,62 +18,62 @@ Grok-Desktop is a Nativefier based desktop application for Windows 10 and 11 tha
 
 ## Prerequisites for use
 - Windows 10 or 11
-- Internet connection.
+- Internet connection
 - Grok account required. You can sign up in app or use your Google or Apple account to login.
 
 ## Prerequisites for building
 - Windows 10 or 11
-- Internet connection.
+- Internet connection
 - Node.js (LTS version, e.g., 20.x)
+
+## Project Structure
+- `src/` - Contains the main Electron application code
+  - `main.js` - Main Electron process
+  - `preload.js` - Preload script for the renderer process
+  - `renderer.js` - Renderer process code
+  - `custom-tabs.js` - Custom tabs implementation
+  - `grok.ico` and `grok.png` - Application icons
+- `index.html` - Main application HTML
+- `styles.css` - Application styles
+- `build.bat` - Build script for Windows
 
 ## Build Grok-Desktop
 1. Install Node.js from [nodejs.org](https://nodejs.org/).
-2. Open PowerShell and verify with `node -v` and `npm -v`.
-3. Install Nativefier globally: `npm install -g nativefier`.
-4. Clone this repository or download the files.
-5. Edit `build_grok-desktop.bat` contents as needed or leave defaults as is.
-6. Run the build script: `build_grok-desktop.bat` (or use the Nativefier command directly).
-7. After building, you can run the test version with `run_test.bat`.
+2. Clone this repository or download the files.
+3. Run `build.bat` to build the application.
 
-## Testing the Application
-There are several scripts available for testing and running the application:
-
-1. **install_deps.bat** - Installs all dependencies cleanly (removes existing node_modules first)
-2. **test_app.bat** - Installs Electron if needed and runs the application for testing
-3. **run_app.bat** - Runs the application using the installed Electron (faster if dependencies are already installed)
-4. **run_test.bat** - Runs the built application from the test directory (requires running build_grok-desktop.bat first)
-
-To test the application without building the installer:
-```
-.\build_grok-desktop.bat
-.\run_test.bat
-```
-
-Or for development testing:
-```
-.\install_deps.bat
-.\run_app.bat
-```
+The build script will automatically:
+- Clean previous build files
+- Create the build directory
+- Check for Node.js and npm installation
+- Configure npm for optimal performance
+- Install project dependencies if needed
+- Install electron-builder globally
+- Build the NSIS installer application
 
 ## Usage
-- Launch `Grok-Desktop.exe` from the `Grok-Desktop-windows-64` directory inside the build directory.
+- Launch `Grok-Desktop.exe` from the build directory after building.
 - Log in via `grok.com`, using Google, Apple, or xAI authentication as needed.
 - Use the + button in the top toolbar to add new tabs.
-- Click the Settings button in the bottom right to access application settings.
+- Click the AOT button in the top right to toggle always-on-top functionality.
 
-## Build Installer
-1. Install Inno Setup from [Inno Setup Website](https://www.jrsoftware.org/isdl.php).
-2. Open grok-desktop_installer.iss from Inno Setup Compiler and click "Compile" to build the installer.
-3. The installer will be located in the `Grok-Desktop_Installer` sub-directory when the build is completed.
+## Build Options
+If you want more control over the build process, you can use these npm commands instead of the build script:
+- NSIS Installer: `npm run build-installer` (creates a standard Windows installer)
+- Full Build: `npm run build` (builds both installer and portable versions)
+- Portable: `npm run build-portable` (creates a portable .exe that doesn't require installation)
+- Directory: `npm run build-dir` or `npm run pack` (builds the app without packaging)
+
+All build outputs will be placed in the `build` directory.
 
 ## Troubleshooting
-- If you encounter issues with dependencies, run `install_deps.bat` to clean and reinstall all dependencies.
 - If the application fails to start, check that Node.js is properly installed and in your PATH.
-- If the tabs or settings button don't appear, try rebuilding with `build_grok-desktop.bat` and running with `run_test.bat`.
+- If the tabs or AOT button don't appear, check the browser console for errors.
+- If you encounter build errors, try running the script again or check the error messages.
 - For other issues, please open an issue on GitHub.
 
 ## License
-This project is licensed under the GNU General Public License version 2.0 (GPL-2.0). See the (LICENSE) file for details.
+This project is licensed under the GNU General Public License version 2.0 (GPL-2.0). See the LICENSE file for details.
 
 ## Contact
 Contact an R key at anrkey@gmail.com
@@ -82,4 +83,4 @@ I don't own the grok.ico file. I found it online and converted it to a .ico file
 If you are from X.ai or Grok.com and if my use of this artwork is a problem, please let me know and I'll remove it. If you are not using this application for private use then I would suggest using a different icon.
 
 ## Contributing
-Details in CONTRIBUTING.md
+See CONTRIBUTING.md for details on how to contribute to this project.
