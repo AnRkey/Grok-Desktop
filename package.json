@@ -55,7 +55,7 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Grok Desktop",
-      "artifactName": "Grok-Desktop_Setup-v${version}.exe"
+      "artifactName": "Grok-Desktop_Installer-v${version}.exe"
     },
     "portable": {
       "artifactName": "Grok-Desktop_Portable-v${version}.exe"
