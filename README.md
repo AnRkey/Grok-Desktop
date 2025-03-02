@@ -72,6 +72,31 @@ All build outputs will be placed in the `build` directory.
 - If you encounter build errors, try running the script again or check the error messages.
 - For other issues, please open an issue on GitHub.
 
+## Support
+Need help? Found a bug? Have a feature request? Please submit an issue on GitHub:
+
+[![Submit an Issue](https://img.shields.io/github/issues/AnRkey/Grok-Desktop?style=for-the-badge)](https://github.com/AnRkey/Grok-Desktop/issues/new/choose)
+
+When submitting an issue, please include:
+1. Your operating system version
+2. Application version you're using
+3. Detailed steps to reproduce the problem
+4. Screenshots if applicable
+5. Any error messages you received
+
+This helps me address your problem more efficiently. You can also check if your issue has already been reported by browsing the [existing issues](https://github.com/AnRkey/Grok-Desktop/issues).
+
+## Feedback
+Your feedback is valuable and helps improve Grok-Desktop! Here are ways to provide feedback:
+
+- **Feature Requests**: Have an idea to make Grok-Desktop better? [Submit a feature request](https://github.com/AnRkey/Grok-Desktop/issues/new?labels=enhancement&template=feature_request.md&title=%5BFEATURE%5D) on GitHub.
+- **General Feedback**: For general comments, suggestions, or experiences using the application, you can:
+  - [Start a discussion](https://github.com/AnRkey/Grok-Desktop/discussions) on GitHub
+  - Send an email to anrkey@gmail.com with the subject "Grok-Desktop Feedback"
+  - Leave a comment on the [releases page](https://github.com/AnRkey/Grok-Desktop/releases)
+
+All feedback is reviewed and considered for future updates. Thank you for helping make Grok-Desktop better!
+
 ## License
 This project is licensed under the GNU General Public License version 2.0 (GPL-2.0). See the LICENSE file for details.
 
