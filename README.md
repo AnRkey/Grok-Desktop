@@ -53,7 +53,9 @@ The build script will automatically:
 - All build outputs will be placed in the `build` directory.
 
 ## Usage
-- Launch `Grok-Desktop.exe` from the build directory after building.
+- Run the build.bat file to build Grok-Desktop and its installer.
+- Install `Grok-Desktop` with the Grok-Desktop_Installer_v1.1.0.exe from the build directory
+- Launch `Grok-Desktop` from the Start Menu
 - Log in via `grok.com`, using Google, Apple, or xAI authentication as needed.
 - Use the + button in the top toolbar to add new tabs.
 - Click the AOT button in the top right to toggle always-on-top functionality.
