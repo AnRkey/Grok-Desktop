@@ -95,4 +95,4 @@ I don't own the grok.ico file. I found it online and converted it to a .ico file
 If you are from X.ai or Grok.com and if my use of this artwork is a problem, please let me know and I'll remove it. If you are not using this application for private use then I would suggest using a different icon.
 
 ## Contributing
-See CONTRIBUTING.md for details on how to contribute to this project.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to contribute to this project.
