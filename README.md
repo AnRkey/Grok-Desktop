@@ -60,12 +60,6 @@ The build script will automatically:
 - Use the + button in the top toolbar to add new tabs.
 - Click the AOT button in the top right to toggle always-on-top functionality.
 
-## Troubleshooting
-- If the application fails to start, check that Node.js is properly installed and in your PATH.
-- If the tabs or AOT button don't appear, check the browser console for errors.
-- If you encounter build errors, try running the script again or check the error messages.
-- For other issues, please open an issue on GitHub.
-
 ## Support
 Need help? Found a bug? Have a feature request? Please submit an issue on GitHub:
 
