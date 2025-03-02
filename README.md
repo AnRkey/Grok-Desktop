@@ -1,4 +1,4 @@
-# Grok-Desktop v.1.1.0-pre
+# Grok-Desktop v.1.1.0
 
 ## Description
 Grok-Desktop is a Nativefier based desktop application for Windows 10 and 11 that wraps `grok.com`, allowing desktop application-like access to Grok with support for xAI, Google, and Apple authentication.
@@ -10,7 +10,7 @@ Grok-Desktop is a Nativefier based desktop application for Windows 10 and 11 tha
 - No menu bar for a cleaner interface
 
 ## Download
-[Download Grok-Desktop_Installer.exe](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.1.0/Grok-Desktop_Installer.exe)
+[Download Grok-Desktop_Installer-v1.1.0.exe](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.1.0/Grok-Desktop_Installer-v1.1.0.exe)
 
 ## Screenshot
 ![Screenshot](screenshot.png)
