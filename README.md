@@ -12,6 +12,8 @@ Grok-Desktop is an Electron-based desktop application for Windows 10 and 11 that
 - Support for xAI, Google, and Apple authentication
 - No menu bar for a cleaner interface
 - Always-on-top function
+- Better Dark/Light mode support **new**
+- Grok speech mode supported **new**
 
 ## Download
 [Download Grok-Desktop_Installer-v1.2.1.exe](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.1/Grok-Desktop_Installer-v1.2.1.exe)
