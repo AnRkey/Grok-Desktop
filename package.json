@@ -1,6 +1,6 @@
 {
   "name": "Grok-Desktop",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Grok-Desktop application for Grok.com with tab support",
   "main": "src/main.js",
   "scripts": {
@@ -27,6 +27,12 @@
   "devDependencies": {
     "electron": "34.3.0"
   },
+  "overrides": {
+    "form-data": "4.0.4",
+    "tmp": "0.2.4",
+    "brace-expansion@1": "1.1.13",
+    "brace-expansion@2": "2.0.2"
+  },
   "build": {
     "appId": "com.grok.desktop",
     "productName": "Grok Desktop",
@@ -37,11 +43,15 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "src/grok.png",
