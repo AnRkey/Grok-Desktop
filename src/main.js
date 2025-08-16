@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, Menu, ipcMain, nativeTheme, session } = require('electron');
+const { app, BrowserWindow, shell, Menu, ipcMain, nativeTheme, session, webContents } = require('electron');
 const path = require('path');
 
 // Keep a global reference of the window object to prevent garbage collection
@@ -11,6 +11,23 @@ const allowedUrlPatterns = [
   /.*accounts\.google\.com.*/,
   /.*appleid\.apple\.com.*/
 ];
+
+// Enforce single instance
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+}
+
+// Track webContents that should always use light color scheme
+const forcedLightWebContentsIds = new Set();
 
 function createWindow() {
   // Create the browser window
@@ -67,7 +84,27 @@ function createWindow() {
     }
   };
   sendTheme();
-  nativeTheme.on('updated', sendTheme);
+  // Apply color scheme to all web contents (main and webviews)
+  const applyColorSchemeToAll = () => {
+    const scheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
+    try {
+      webContents.getAllWebContents().forEach((wc) => {
+        if (typeof wc.setColorScheme === 'function') {
+          if (forcedLightWebContentsIds.has(wc.id)) {
+            wc.setColorScheme('light');
+          } else {
+            wc.setColorScheme(scheme);
+          }
+        }
+      });
+    } catch (_) {}
+  };
+  applyColorSchemeToAll();
+
+  nativeTheme.on('updated', () => {
+    sendTheme();
+    applyColorSchemeToAll();
+  });
 
   // Open DevTools in development mode
   // mainWindow.webContents.openDevTools();
@@ -85,6 +122,27 @@ function createWindow() {
 
   // Enable right-click context menus
   setupContextMenus();
+
+  // Ensure newly created webContents/webviews get correct color scheme
+  app.on('web-contents-created', (_event, contents) => {
+    const scheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
+    if (typeof contents.setColorScheme === 'function') {
+      if (forcedLightWebContentsIds.has(contents.id)) {
+        contents.setColorScheme('light');
+      } else {
+        contents.setColorScheme(scheme);
+      }
+    }
+    contents.on('did-attach-webview', (_e, wc) => {
+      if (wc && typeof wc.setColorScheme === 'function') {
+        if (forcedLightWebContentsIds.has(wc.id)) {
+          wc.setColorScheme('light');
+        } else {
+          wc.setColorScheme(scheme);
+        }
+      }
+    });
+  });
 }
 
 // Create window when Electron has finished initialization
@@ -106,18 +164,14 @@ app.on('window-all-closed', () => {
 function setupUrlHandling() {
   // Handle navigation events from webContents
   app.on('web-contents-created', (event, contents) => {
-    // Handle new window creation
+    // Intercept new window requests; always deny BrowserWindow creation
+    // Internal domains will be handled by the renderer's webview 'new-window' handler
     contents.setWindowOpenHandler(({ url }) => {
-      const shouldHandleInternally = allowedUrlPatterns.some(pattern => pattern.test(url));
-      
-      if (shouldHandleInternally) {
-        // Allow creating a new tab/window within the app
-        return { action: 'allow' };
-      } else {
-        // Open in external browser
+      const isInternal = allowedUrlPatterns.some(pattern => pattern.test(url));
+      if (!isInternal) {
         shell.openExternal(url);
-        return { action: 'deny' };
       }
+      return { action: 'deny' };
     });
   });
 }
@@ -140,6 +194,39 @@ function setupIpcHandlers() {
       return app.getVersion();
     } catch (_) {
       return '0.0.0';
+    }
+  });
+
+  // Force light/dynamic color scheme for specific webContents id
+  ipcMain.handle('force-light-color-scheme', (_event, wcId, shouldForceLight) => {
+    try {
+      const wc = webContents.fromId(wcId);
+      if (!wc) return false;
+      if (shouldForceLight) {
+        forcedLightWebContentsIds.add(wcId);
+        if (typeof wc.setColorScheme === 'function') wc.setColorScheme('light');
+        // Stronger override via DevTools Protocol: emulate prefers-color-scheme: light
+        try {
+          if (!wc.debugger.isAttached()) wc.debugger.attach('1.3');
+          wc.debugger.sendCommand('Emulation.setEmulatedMedia', {
+            features: [{ name: 'prefers-color-scheme', value: 'light' }]
+          });
+        } catch (_) {}
+      } else {
+        forcedLightWebContentsIds.delete(wcId);
+        const scheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
+        if (typeof wc.setColorScheme === 'function') wc.setColorScheme(scheme);
+        // Remove emulation
+        try {
+          if (wc.debugger.isAttached()) {
+            wc.debugger.sendCommand('Emulation.setEmulatedMedia', { features: [] });
+            wc.debugger.detach();
+          }
+        } catch (_) {}
+      }
+      return true;
+    } catch (_) {
+      return false;
     }
   });
 } 

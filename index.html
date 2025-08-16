@@ -392,6 +392,36 @@
         webview.setAttribute('allowpopups', '');
         
         viewElement.appendChild(webview);
+
+        const ensureWebviewBackground = () => {
+          const bg = getComputedStyle(webview).backgroundColor;
+          if (bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent') {
+            webview.style.backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--color-bg-content').trim() || '#ffffff';
+          }
+        };
+        ensureWebviewBackground();
+
+        const applyAppleLightScheme = async () => {
+          let currentUrl = '';
+          try { currentUrl = webview.getURL ? webview.getURL() : ''; } catch (_) {}
+          const target = (currentUrl || '').toLowerCase();
+          const wcId = webview.getWebContentsId ? webview.getWebContentsId() : null;
+          if (wcId && (target.includes('appleid.apple.com') || target.includes('appleid.apple.com/auth'))) {
+            try { await ipcRenderer.invoke('force-light-color-scheme', wcId, true); } catch (_) {}
+            // Fallback CSS to force light palette in case site ignores color scheme
+            const lightCss = `:root{color-scheme:light !important}
+              html,body{background:#ffffff !important;color:#000000 !important}
+              input,textarea,select{background:#ffffff !important;color:#000000 !important;border-color:#bbb !important}
+              header,nav{background:#ffffff !important;color:#000000 !important}
+            `;
+            try { webview.insertCSS(lightCss).catch(()=>{}); } catch (_) {}
+            webview.style.backgroundColor = '#ffffff';
+          } else if (wcId) {
+            try { await ipcRenderer.invoke('force-light-color-scheme', wcId, false); } catch (_) {}
+            // Reset background to themed content color
+            webview.style.backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--color-bg-content').trim() || '';
+          }
+        };
         
         // Add to DOM - insert before the new tab button
         this.tabsContainer.appendChild(tabElement);
@@ -425,6 +455,14 @@
         webview.addEventListener('did-stop-loading', () => {
           tabElement.classList.remove('loading');
         });
+
+        webview.addEventListener('dom-ready', () => {
+          ensureWebviewBackground();
+          applyAppleLightScheme();
+        });
+
+        webview.addEventListener('did-navigate', () => applyAppleLightScheme());
+        webview.addEventListener('did-navigate-in-page', () => applyAppleLightScheme());
         
         const handleOpenUrl = (targetUrl) => {
           const url = targetUrl;
@@ -434,20 +472,48 @@
             /.*accounts\.google\.com.*/,
             /.*appleid\.apple\.com.*/
           ];
-          
+          // Explicitly treat auth/navigation endpoints as internal and navigate in same tab
+          if (/^https?:\/\/grok\.com\/sign-in(\b|\/|\?|#)/i.test(url)
+           || /^https?:\/\/grok\.com\/sign-out(\b|\/|\?|#)/i.test(url)
+           || /^https?:\/\/accounts\.x\.ai\/sign-in(\b|\/|\?|#)/i.test(url)) {
+            if (typeof webview.loadURL === 'function') {
+              webview.loadURL(url);
+            } else {
+              webview.src = url;
+            }
+            return;
+          }
+
           const isInternalUrl = internalPatterns.some(pattern => pattern.test(url));
-          
+
           if (isInternalUrl) {
-            this.createTab(url);
+            if (typeof webview.loadURL === 'function') {
+              webview.loadURL(url);
+            } else {
+              webview.src = url;
+            }
           } else {
             require('electron').shell.openExternal(url);
           }
         };
 
         // Open links that request a new window
-        webview.addEventListener('new-window', (e) => handleOpenUrl(e.url));
-        // Handle in-page navigation attempts as well
-        webview.addEventListener('will-navigate', (e) => handleOpenUrl(e.url));
+        webview.addEventListener('new-window', (e) => { e.preventDefault(); handleOpenUrl(e.url); });
+        // Allow internal same-tab nav; open external in browser
+        webview.addEventListener('will-navigate', (e) => {
+          const url = e.url;
+          const internal = /.*\.grok\.com.*/.test(url) ||
+                           /.*\.x\.ai.*/.test(url) ||
+                           /.*accounts\.google\.com.*/.test(url) ||
+                           /.*appleid\.apple\.com.*/.test(url) ||
+                           /^https?:\/\/grok\.com\/sign-in(\b|\/|\?|#)/i.test(url) ||
+                           /^https?:\/\/grok\.com\/sign-out(\b|\/|\?|#)/i.test(url) ||
+                           /^https?:\/\/accounts\.x\.ai\/sign-in(\b|\/|\?|#)/i.test(url);
+          if (!internal) {
+            e.preventDefault();
+            require('electron').shell.openExternal(url);
+          }
+        });
         
         // Store tab info
         this.tabs.push({
