@@ -1,15 +1,15 @@
 {
   "name": "Grok-Desktop",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Grok-Desktop application for Grok.com with tab support",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder --win --x64",
-    "pack": "electron-builder --dir",
-    "build-portable": "electron-builder --win portable",
-    "build-dir": "electron-builder --dir",
-    "build-installer": "electron-builder --win nsis"
+    "build": "npx --yes electron-builder@latest --win --x64",
+    "pack": "npx --yes electron-builder@latest --dir",
+    "build-portable": "npx --yes electron-builder@latest --win portable",
+    "build-dir": "npx --yes electron-builder@latest --dir",
+    "build-installer": "npx --yes electron-builder@latest --win nsis"
   },
   "keywords": [
     "electron",
@@ -25,8 +25,7 @@
     "electron-tabs": "^1.0.4"
   },
   "devDependencies": {
-    "electron": "^34.3.0",
-    "electron-builder": "^25.1.8"
+    "electron": "34.3.0"
   },
   "build": {
     "appId": "com.grok.desktop",
@@ -46,7 +45,6 @@
         }
       ],
       "icon": "src/grok.png",
-      "sign": null,
       "forceCodeSigning": false
     },
     "nsis": {

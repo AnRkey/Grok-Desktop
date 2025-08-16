@@ -1,4 +1,4 @@
-# Grok-Desktop v.1.1.0
+# Grok-Desktop v.1.2.0
 
 ## Description
 Grok-Desktop is an Electron-based desktop application for Windows 10 and 11 that wraps `grok.com`, allowing desktop-application-like access to Grok with support for xAI, Google, and Apple authentication.
@@ -14,7 +14,7 @@ Grok-Desktop is an Electron-based desktop application for Windows 10 and 11 that
 - Always-on-top function
 
 ## Download
-[Download Grok-Desktop_Installer-v1.1.0.exe](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.1.0/Grok-Desktop_Installer-v1.1.0.exe)
+[Download Grok-Desktop_Installer-v1.2.0.exe](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.0/Grok-Desktop_Installer-v1.2.0.exe)
 
 ## Prerequisites for use
 - Windows 10 or 11
@@ -54,7 +54,7 @@ The build script will automatically:
 
 ## Usage
 - Run the build.bat file to build Grok-Desktop and its installer.
-- Install `Grok-Desktop` with the Grok-Desktop_Installer_v1.1.0.exe from the build directory
+- Install `Grok-Desktop` with the Grok-Desktop_Installer_v1.2.0.exe from the build directory
 - Launch `Grok-Desktop` from the Start Menu
 - Log in via `grok.com`, using Google, Apple, or xAI authentication as needed.
 - Use the + button in the top toolbar to add new tabs.

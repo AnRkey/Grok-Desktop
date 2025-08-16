@@ -6,43 +6,113 @@
   <title>Grok Desktop</title>
   <link rel="stylesheet" href="styles.css">
   <style>
+    :root {
+      --color-text: #000000;
+      --color-bg-toolbar: #F9F8F6;
+      --color-bg-tab: #F9F8F6;
+      --color-bg-tab-active: #ffffff;
+      --color-bg-content: #ffffff;
+      --color-border: #dddddd;
+      --color-hover: #dddddd;
+      --color-aot-border: #cccccc;
+      --color-aot-hover: #e6e6e6;
+      --scrollbar-track: #f1f1f1;
+      --scrollbar-thumb: #c1c1c1;
+      --scrollbar-thumb-hover: #a8a8a8;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-text: #e6e6e6;
+        --color-bg-toolbar: #1e1f22;
+        --color-bg-tab: #2b2d31;
+        --color-bg-tab-active: #3b3e45;
+        --color-bg-content: #2b2d31;
+        --color-border: #444444;
+        --color-hover: #444444;
+        --color-aot-border: #555555;
+        --color-aot-hover: #444444;
+        --scrollbar-track: #2a2b2f;
+        --scrollbar-thumb: #55595f;
+        --scrollbar-thumb-hover: #666b73;
+      }
+    }
+
+    /* Also support JS-driven theme toggling via a class */
+    :root.dark {
+      --color-text: #e6e6e6;
+      --color-bg-toolbar: #1e1f22;
+      --color-bg-tab: #2b2d31;
+      --color-bg-tab-active: #3b3e45;
+      --color-bg-content: #2b2d31;
+      --color-border: #444444;
+      --color-hover: #444444;
+      --color-aot-border: #555555;
+      --color-aot-hover: #444444;
+      --scrollbar-track: #2a2b2f;
+      --scrollbar-thumb: #55595f;
+      --scrollbar-thumb-hover: #666b73;
+    }
+
     /* Basic styling for the tabs */
     body {
       margin: 0;
       padding: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       overflow: hidden;
+      color: var(--color-text);
     }
 
     .tabs-container {
       width: 100%;
       height: 50px;
-      background-color: #F9F8F6;
+      background-color: var(--color-bg-toolbar);
       display: flex;
-      overflow-x: auto;
+      overflow: hidden; /* keep controls visible; only tabs scroll */
+      position: relative;
     }
 
     .tabs {
       display: flex;
-      flex-grow: 1;
+      flex: 1 1 auto;
+      min-width: 0;            /* allow flex child to shrink so it doesn't push controls */
+      overflow-x: auto;        /* scroll just the tabs area */
+      overflow-y: hidden;
     }
+
+    .tabs-scroll {
+      appearance: none;
+      -webkit-appearance: none;
+      border: none;
+      background: none;
+      color: var(--color-text);
+      font-size: 18px;
+      width: 28px;
+      height: 40px;
+      cursor: pointer;
+      align-self: center;
+      display: none; /* hidden by default; shown only when needed */
+    }
+    .tabs-scroll:hover { background-color: var(--color-hover); }
+    .tabs-scroll-left { margin-right: 2px; }
+    .tabs-scroll-right { margin-left: 2px; }
 
     .tab {
       display: flex;
       align-items: center;
-      border-right: 1px solid #ddd;
+      border-right: 1px solid var(--color-border);
       min-width: 180px;
       max-width: 220px;
       padding: 0 10px;
       height: 40px;
-      background-color: #F9F8F6;
+      background-color: var(--color-bg-tab);
       cursor: pointer;
       overflow: hidden;
       position: relative;
     }
 
     .tab.active {
-      background-color: #fff;
+      background-color: var(--color-bg-tab-active);
     }
 
     .tab-title {
@@ -66,10 +136,11 @@
       border-radius: 50%;
       font-size: 14px;
       cursor: pointer;
+      color: var(--color-text);
     }
 
     .tab-close:hover {
-      background-color: #ddd;
+      background-color: var(--color-hover);
     }
 
     .new-tab-button {
@@ -83,21 +154,24 @@
       align-items: center;
       justify-content: center;
       margin-left: 5px;
+      color: var(--color-text);
     }
 
     .new-tab-button:hover {
-      background-color: #ddd;
+      background-color: var(--color-hover);
     }
 
     .app-controls {
       display: flex;
       align-items: center;
       padding: 0 5px;
+      flex: 0 0 auto;          /* reserve space; never shrink */
+      white-space: nowrap;
     }
 
     .aot-button {
       background: none;
-      border: 1px solid #ccc;
+      border: 1px solid var(--color-aot-border);
       border-radius: 4px;
       margin-left: 5px;
       padding: 2px 6px;
@@ -108,10 +182,11 @@
       align-items: center;
       justify-content: center;
       transition: all 0.2s ease;
+      color: var(--color-text);
     }
 
     .aot-button:hover {
-      background-color: #e6e6e6;
+      background-color: var(--color-aot-hover);
     }
 
     .aot-button.active {
@@ -124,6 +199,7 @@
       height: calc(100vh - 40px);
       width: 100%;
       position: relative;
+      background-color: var(--color-bg-content);
     }
 
     .view {
@@ -133,6 +209,7 @@
       width: 100%;
       height: 100%;
       display: none;
+      background-color: var(--color-bg-content);
     }
 
     .view.active {
@@ -143,13 +220,17 @@
       width: 100%;
       height: 100%;
       border: none;
+      background-color: var(--color-bg-content);
     }
   </style>
 </head>
 <body>
   <div class="tabs-container">
+    <button class="tabs-scroll tabs-scroll-left" id="tabs-scroll-left" aria-hidden="true">&#x2039;</button>
     <div class="tabs" id="tabs"></div>
+    <button class="tabs-scroll tabs-scroll-right" id="tabs-scroll-right" aria-hidden="true">&#x203A;</button>
     <div class="app-controls">
+      <div id="update-indicator" style="margin-right:8px;font-size:12px;opacity:0.9;cursor:pointer;text-decoration:underline;display:none;"></div>
       <button class="aot-button" id="aot-button">AOT</button>
     </div>
   </div>
@@ -157,6 +238,78 @@
 
   <script>
     // Simple tab management
+    const { ipcRenderer } = require('electron');
+    const https = require('https');
+    const currentVersionPromise = ipcRenderer.invoke('get-app-version');
+
+    function parseTagName(tag) {
+      if (!tag) return null;
+      // expect vMAJOR.MINOR.PATCH
+      const m = tag.trim().match(/^v?(\d+)\.(\d+)\.(\d+)$/);
+      if (!m) return null;
+      return { major: +m[1], minor: +m[2], patch: +m[3] };
+    }
+
+    function cmpSemver(a, b) {
+      if (a.major !== b.major) return a.major - b.major;
+      if (a.minor !== b.minor) return a.minor - b.minor;
+      return a.patch - b.patch;
+    }
+
+    let latestReleaseUrl = null;
+
+    async function checkForUpdate() {
+      try {
+        const currentVersionStr = await currentVersionPromise;
+        const cur = parseTagName('v' + currentVersionStr);
+        if (!cur) return;
+        const data = await fetchLatestRelease();
+        if (!data || !data.tag_name) return;
+        const latest = parseTagName(data.tag_name);
+        if (!latest) return;
+        if (cmpSemver(latest, cur) > 0) {
+          const el = document.getElementById('update-indicator');
+          if (el) {
+            el.textContent = 'Update available';
+            el.title = `Latest: ${data.tag_name}`;
+            latestReleaseUrl = data.html_url || `https://github.com/AnRkey/Grok-Desktop/releases/tag/${data.tag_name}`;
+            el.style.display = 'inline';
+          }
+          // Also annotate window title
+          document.title = `${document.title} — Update available`;
+        }
+      } catch (_) {}
+    }
+
+    function fetchLatestRelease() {
+      const url = 'https://api.github.com/repos/AnRkey/Grok-Desktop/releases/latest';
+      const headers = { 'User-Agent': 'Grok-Desktop', 'Accept': 'application/vnd.github+json' };
+      return new Promise((resolve, reject) => {
+        const req = https.get(url, { headers }, (res) => {
+          let body = '';
+          res.on('data', (chunk) => body += chunk);
+          res.on('end', () => {
+            try {
+              resolve(JSON.parse(body));
+            } catch (e) {
+              resolve(null);
+            }
+          });
+        });
+        req.on('error', reject);
+        req.end();
+      });
+    }
+
+    // Apply theme on message from main
+    ipcRenderer.on('system-theme-updated', (_event, theme) => {
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    });
+
     const tabManager = {
       tabs: [],
       activeTabId: null,
@@ -172,7 +325,6 @@
         const aotButton = document.getElementById('aot-button');
         aotButton.addEventListener('click', () => {
           // Use IPC to communicate with the main process
-          const { ipcRenderer } = require('electron');
           ipcRenderer.invoke('toggle-always-on-top').then((isAlwaysOnTop) => {
             if (isAlwaysOnTop) {
               aotButton.classList.add('active');
@@ -184,6 +336,12 @@
         
         // Create initial tab
         this.createTab('https://grok.com');
+
+        // After initial UI is ready, check for updates
+        checkForUpdate();
+
+        // Setup tab scroll buttons visibility and behavior
+        this.setupScrollButtons();
       },
       
       createNewTabButton() {
@@ -207,6 +365,8 @@
           this.newTabButton.parentNode.removeChild(this.newTabButton);
         }
         this.tabsContainer.appendChild(this.newTabButton);
+        // Re-evaluate scroll buttons after tab changes
+        this.updateScrollButtons();
       },
       
       createTab(url) {
@@ -229,6 +389,7 @@
         const webview = document.createElement('webview');
         webview.src = url;
         webview.partition = 'persist:grok';
+        webview.setAttribute('allowpopups', '');
         
         viewElement.appendChild(webview);
         
@@ -265,8 +426,8 @@
           tabElement.classList.remove('loading');
         });
         
-        webview.addEventListener('new-window', (e) => {
-          const url = e.url;
+        const handleOpenUrl = (targetUrl) => {
+          const url = targetUrl;
           const internalPatterns = [
             /.*\.grok\.com.*/,
             /.*\.x\.ai.*/,
@@ -281,7 +442,12 @@
           } else {
             require('electron').shell.openExternal(url);
           }
-        });
+        };
+
+        // Open links that request a new window
+        webview.addEventListener('new-window', (e) => handleOpenUrl(e.url));
+        // Handle in-page navigation attempts as well
+        webview.addEventListener('will-navigate', (e) => handleOpenUrl(e.url));
         
         // Store tab info
         this.tabs.push({
@@ -295,6 +461,34 @@
         this.activateTab(tabId);
         
         return tabId;
+      },
+
+      setupScrollButtons() {
+        this.leftBtn = document.getElementById('tabs-scroll-left');
+        this.rightBtn = document.getElementById('tabs-scroll-right');
+        this.scrollContainer = this.tabsContainer; // tabs container is the scroll target for x
+        if (this.leftBtn && this.rightBtn) {
+          this.leftBtn.addEventListener('click', () => this.scrollByAmount(-200));
+          this.rightBtn.addEventListener('click', () => this.scrollByAmount(200));
+          // Update on scroll and resize
+          this.scrollContainer.addEventListener('scroll', () => this.updateScrollButtons(), { passive: true });
+          window.addEventListener('resize', () => this.updateScrollButtons());
+          // Initial
+          this.updateScrollButtons();
+        }
+      },
+
+      scrollByAmount(dx) {
+        this.scrollContainer.scrollBy({ left: dx, behavior: 'smooth' });
+      },
+
+      updateScrollButtons() {
+        if (!this.leftBtn || !this.rightBtn) return;
+        const sc = this.scrollContainer;
+        const canScrollLeft = sc.scrollLeft > 0;
+        const canScrollRight = Math.ceil(sc.scrollLeft + sc.clientWidth) < sc.scrollWidth;
+        this.leftBtn.style.display = canScrollLeft ? 'inline-flex' : 'none';
+        this.rightBtn.style.display = canScrollRight ? 'inline-flex' : 'none';
       },
       
       activateTab(tabId) {
@@ -354,6 +548,15 @@
     // Initialize when DOM is loaded
     document.addEventListener('DOMContentLoaded', () => {
       tabManager.init();
+      // Click to open latest release page
+      const indicator = document.getElementById('update-indicator');
+      if (indicator) {
+        indicator.addEventListener('click', () => {
+          if (latestReleaseUrl) {
+            require('electron').shell.openExternal(latestReleaseUrl);
+          }
+        });
+      }
     });
   </script>
 </body>
