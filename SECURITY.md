@@ -6,7 +6,8 @@ The following vesion support matrix shows which versions of Grok-Desktop are cur
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.2.0   | :white_check_mark: |
+| 1.2.1   | :white_check_mark: |
+| 1.2.0   | :x:                |
 | 1.1.0   | :x:                |
 
 ## Reporting a Vulnerability
