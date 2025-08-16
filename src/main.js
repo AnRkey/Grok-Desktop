@@ -4,6 +4,9 @@ const path = require('path');
 // Keep a global reference of the window object to prevent garbage collection
 let mainWindow;
 
+// Allow autoplay without user gesture (for seamless audio playback)
+try { app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required'); } catch (_) {}
+
 // Define the allowed URL patterns for internal handling
 const allowedUrlPatterns = [
   /.*\.grok\.com.*/,
@@ -119,6 +122,9 @@ function createWindow() {
 
   // Set up IPC handlers
   setupIpcHandlers();
+
+  // Set up WebRTC/media permissions (allow across all domains)
+  setupPermissions();
 
   // Enable right-click context menus
   setupContextMenus();
@@ -318,4 +324,43 @@ function setupContextMenus() {
       if (win) menu.popup({ window: win });
     });
   });
+}
+
+// Allow all media-related permissions for all domains (both default and persist:grok sessions)
+function setupPermissions() {
+  const enableForSession = (targetSession) => {
+    if (!targetSession) return;
+    try {
+      // Always grant permission checks
+      if (typeof targetSession.setPermissionCheckHandler === 'function') {
+        targetSession.setPermissionCheckHandler(() => true);
+      }
+      // Always grant runtime permission requests
+      if (typeof targetSession.setPermissionRequestHandler === 'function') {
+        targetSession.setPermissionRequestHandler((_wc, _permission, callback, _details) => {
+          try { callback(true); } catch (_) {}
+        });
+      }
+      // Best-effort: allow device and display capture if supported by current Electron
+      if (typeof targetSession.setDevicePermissionHandler === 'function') {
+        targetSession.setDevicePermissionHandler(() => true);
+      }
+      if (typeof targetSession.setDisplayMediaRequestHandler === 'function') {
+        targetSession.setDisplayMediaRequestHandler((_wc, request, callback) => {
+          // Approve requested audio/video capture; defer exact source selection to default behavior
+          try { callback({ video: !!request.video, audio: !!request.audio }); } catch (_) {}
+        });
+      }
+    } catch (_) {}
+  };
+
+  try { enableForSession(session.defaultSession); } catch (_) {}
+  try { enableForSession(session.fromPartition('persist:grok')); } catch (_) {}
+
+  // Ensure any future sessions/webviews also have audio unmuted
+  try {
+    app.on('web-contents-created', (_event, contents) => {
+      try { if (typeof contents.setAudioMuted === 'function') contents.setAudioMuted(false); } catch (_) {}
+    });
+  } catch (_) {}
 }

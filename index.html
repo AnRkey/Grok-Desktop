@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval'; media-src * data: blob: https:; img-src * data: blob: https:; connect-src * data: blob: https:; frame-src * https: data:; child-src * https: data:;">
   <title>Grok Desktop</title>
   <link rel="stylesheet" href="styles.css">
   <style>
@@ -390,6 +390,7 @@
         webview.src = url;
         webview.partition = 'persist:grok';
         webview.setAttribute('allowpopups', '');
+        webview.setAttribute('allow', 'microphone; camera; autoplay; clipboard-read; clipboard-write; display-capture');
         
         viewElement.appendChild(webview);
 
