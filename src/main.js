@@ -1,4 +1,14 @@
+
 const { app, BrowserWindow, shell, Menu, ipcMain, nativeTheme, session, webContents } = require('electron');
+
+// Handle open-external-url from renderer
+ipcMain.handle('open-external-url', async (_event, url) => {
+  if (typeof url === 'string' && url.startsWith('http')) {
+    await shell.openExternal(url);
+    return true;
+  }
+  return false;
+});
 const path = require('path');
 
 // Keep a global reference of the window object to prevent garbage collection

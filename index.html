@@ -230,8 +230,9 @@
     <div class="tabs" id="tabs"></div>
     <button class="tabs-scroll tabs-scroll-right" id="tabs-scroll-right" aria-hidden="true">&#x203A;</button>
     <div class="app-controls">
-      <div id="update-indicator" style="margin-right:8px;font-size:12px;opacity:0.9;cursor:pointer;text-decoration:underline;display:none;"></div>
-      <button class="aot-button" id="aot-button">AOT</button>
+  <div id="update-indicator" style="margin-right:8px;font-size:12px;opacity:0.9;cursor:pointer;text-decoration:underline;display:none;"></div>
+  <button class="aot-button" id="aot-button" title="Always on top">AOT</button>
+  <button class="aot-button" id="update-btn" style="margin-left:8px;display:none;background:#ff3333;color:#fff;border-color:#cc0000;" title="Update available">↑</button>
     </div>
   </div>
   <div class="views-container" id="views"></div>
@@ -269,14 +270,13 @@
         if (!latest) return;
         if (cmpSemver(latest, cur) > 0) {
           const el = document.getElementById('update-indicator');
-          if (el) {
-            el.textContent = 'Update available';
-            el.title = `Latest: ${data.tag_name}`;
-            latestReleaseUrl = data.html_url || `https://github.com/AnRkey/Grok-Desktop/releases/tag/${data.tag_name}`;
-            el.style.display = 'inline';
+          const btn = document.getElementById('update-btn');
+          latestReleaseUrl = data.html_url || `https://github.com/AnRkey/Grok-Desktop/releases/tag/${data.tag_name}`;
+          if (btn) {
+            btn.style.display = 'inline-block';
+            btn.title = `Version ${data.tag_name} available`;
           }
-          // Also annotate window title
-          document.title = `${document.title} — Update available`;
+
         }
       } catch (_) {}
     }
@@ -619,8 +619,22 @@
       const indicator = document.getElementById('update-indicator');
       if (indicator) {
         indicator.addEventListener('click', () => {
-          if (latestReleaseUrl) {
-            require('electron').shell.openExternal(latestReleaseUrl);
+          const url = latestReleaseUrl || 'https://github.com/AnRkey/Grok-Desktop/releases/latest';
+          if (window.ipcRenderer) {
+            window.ipcRenderer.invoke('open-external-url', url);
+          } else if (typeof ipcRenderer !== 'undefined') {
+            ipcRenderer.invoke('open-external-url', url);
+          }
+        });
+      }
+      const updateBtn = document.getElementById('update-btn');
+      if (updateBtn) {
+        updateBtn.addEventListener('click', () => {
+          const url = latestReleaseUrl || 'https://github.com/AnRkey/Grok-Desktop/releases/latest';
+          if (window.ipcRenderer) {
+            window.ipcRenderer.invoke('open-external-url', url);
+          } else if (typeof ipcRenderer !== 'undefined') {
+            ipcRenderer.invoke('open-external-url', url);
           }
         });
       }
