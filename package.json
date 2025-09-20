@@ -1,6 +1,6 @@
 {
   "name": "Grok-Desktop",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Grok-Desktop application for Grok.com with tab support",
   "main": "src/main.js",
   "scripts": {
@@ -25,7 +25,7 @@
     "electron-tabs": "^1.0.4"
   },
   "devDependencies": {
-    "electron": "34.3.0"
+    "electron": "35.7.5"
   },
   "overrides": {
     "form-data": "4.0.4",

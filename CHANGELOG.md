@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+
+## [1.2.2] - 2025-09-20
+
+### Security
+- Updated Electron to 35.7.5 to address ASAR integrity bypass vulnerability (CVE-2025-55305, GHSA-vmxy-hx4q-j7mg)
+
+### Changed
+- Bump version to 1.2.2
+
 ## [Unreleased]
 
 ## [1.2.1] - 2025-08-16
