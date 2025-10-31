@@ -69,18 +69,55 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 :: Build the installer application (no global installs)
-echo Building installer application...
-call npx --yes electron-builder@latest --win nsis
+echo Building Windows installer targets configured in package.json...
+call npx --yes electron-builder@latest --win --x64
+
+:: Check if installer build was successful
+if %ERRORLEVEL% NEQ 0 (
+  echo ===================================================
+  echo Installer build failed with error code %ERRORLEVEL%
+  echo Please check the error messages above.
+  echo ===================================================
+  goto :error
+)
+
+:: Build archive targets separately with custom artifact names
+echo Building 7z archive...
+call npx --yes electron-builder@latest --win 7z --x64 --publish=never
+
+:: Rename 7z archive to follow naming convention
+if exist "build\*.7z" (
+  for %%f in ("build\*.7z") do (
+    if not "%%~nf"=="Grok-Desktop_Archive-v1.2.2" (
+      echo Renaming %%f to Grok-Desktop_Archive-v1.2.2.7z
+      move "%%f" "build\Grok-Desktop_Archive-v1.2.2.7z" >nul
+    )
+  )
+)
+
+echo Building zip archive...
+call npx --yes electron-builder@latest --win zip --x64 --publish=never
+
+:: Rename zip archive to follow naming convention
+if exist "build\*.zip" (
+  for %%f in ("build\*.zip") do (
+    if not "%%~nf"=="Grok-Desktop_Archive-v1.2.2" (
+      echo Renaming %%f to Grok-Desktop_Archive-v1.2.2.zip
+      move "%%f" "build\Grok-Desktop_Archive-v1.2.2.zip" >nul
+    )
+  )
+)
 
 :: Check if build was successful
 if %ERRORLEVEL% EQU 0 (
   echo ===================================================
   echo Build completed successfully!
-  echo Installer executable can be found in the build directory.
+  echo All files can be found in the build directory:
+  dir /b build\*.exe build\*.msi build\*.7z build\*.zip 2>nul
   echo ===================================================
 ) else (
   echo ===================================================
-  echo Build failed with error code %ERRORLEVEL%
+  echo Archive build failed with error code %ERRORLEVEL%
   echo Please check the error messages above.
   echo ===================================================
   goto :error

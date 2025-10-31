@@ -9,7 +9,7 @@
     "pack": "npx --yes electron-builder@latest --dir",
     "build-portable": "npx --yes electron-builder@latest --win portable",
     "build-dir": "npx --yes electron-builder@latest --dir",
-    "build-installer": "npx --yes electron-builder@latest --win nsis"
+    "build-installer": "npx --yes electron-builder@latest --win --x64"
   },
   "keywords": [
     "electron",
@@ -17,7 +17,7 @@
     "desktop",
     "tabs"
   ],
-  "author": "",
+  "author": "AnRkey",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
@@ -48,6 +48,12 @@
           ]
         },
         {
+          "target": "msi",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
           "target": "portable",
           "arch": [
             "x64"
@@ -64,6 +70,9 @@
       "createStartMenuShortcut": true,
       "shortcutName": "Grok Desktop",
       "artifactName": "Grok-Desktop_Installer-v${version}.exe"
+    },
+    "msi": {
+      "artifactName": "Grok-Desktop_Installer-v${version}.msi"
     },
     "portable": {
       "artifactName": "Grok-Desktop_Portable-v${version}.exe"
