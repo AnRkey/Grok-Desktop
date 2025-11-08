@@ -24,7 +24,7 @@
     "electron-tabs": "^1.0.4"
   },
   "devDependencies": {
-    "electron": "^38.0.0"
+    "electron": "^39.1.1"
   },
   "overrides": {
     "form-data": "4.0.4",
@@ -76,8 +76,8 @@
     "portable": {
       "artifactName": "Grok-Desktop_Portable-v${version}.exe"
     },
-  "compression": "store",
-  "asar": true,
+    "compression": "store",
+    "asar": true,
     "asarUnpack": [],
     "extraResources": [],
     "files": [
