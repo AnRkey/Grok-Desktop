@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>About</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #ffffff;
+      --fg: #111111;
+      --muted: #555555;
+      --border: #dddddd;
+      --button-bg: #f3f4f6;
+      --button-fg: #111111;
+      --accent: #1a73e8;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1e1f21;
+        --fg: #e8eaed;
+        --muted: #a0a4ab;
+        --border: #3a3b3e;
+        --button-bg: #2a2b2e;
+        --button-fg: #e8eaed;
+        --accent: #8ab4f8;
+      }
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Noto Sans", "Helvetica Neue", Arial, sans-serif;
+    }
+    .container {
+      padding: 16px 18px;
+      display: grid;
+      gap: 8px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 32px;
+      font-weight: 600;
+    }
+    p {
+      margin: 0;
+      font-size: 26px;
+      color: var(--muted);
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .actions {
+      margin-top: 37px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    button {
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--button-bg);
+      color: var(--button-fg);
+      cursor: pointer;
+    }
+    button:hover {
+      filter: brightness(1.05);
+    }
+    .small {
+      font-size: 24px;
+    }
+  </style>
+  <script>
+    (function() {
+      function getParam(name, fallback) {
+        try {
+          const params = new URLSearchParams(location.search);
+          return params.get(name) || fallback;
+        } catch (_) {
+          return fallback;
+        }
+      }
+      window.addEventListener('DOMContentLoaded', function() {
+        const name = getParam('name', 'Grok Desktop');
+        const version = getParam('version', '0.0.0');
+        const repo = getParam('repo', 'https://github.com/AnRkey/Grok-Desktop');
+        const developer = getParam('developer', '');
+        const contact = getParam('contact', '');
+        document.getElementById('appName').textContent = name;
+        document.getElementById('version').textContent = 'Version: ' + version;
+        (function() {
+          const devEl = document.getElementById('developerLink');
+          let devName = developer;
+          if (!devName) {
+            try {
+              const m = repo.match(/^https?:\/\/github\.com\/([^/]+)/i);
+              if (m && m[1]) devName = m[1];
+            } catch (_) {}
+          }
+          if (devEl) {
+            if (devName) devEl.textContent = devName;
+            const href = devName ? ('https://github.com/' + devName) : 'https://github.com';
+            devEl.href = href;
+            devEl.setAttribute('target', '_blank');
+            devEl.setAttribute('rel', 'noopener');
+          }
+        })();
+        const link = document.getElementById('repoLink');
+        link.href = repo;
+        // The main process intercepts navigation/window open and opens the URL externally
+        // Setting target=_blank helps trigger that handler for best compatibility
+        link.setAttribute('target', '_blank');
+        link.setAttribute('rel', 'noopener');
+        const contactLink = document.getElementById('contactLink');
+        let contactHref = contact;
+        if (!contactHref) {
+          // Derive contact from repo owner
+          try {
+            const m = repo.match(/^https?:\/\/github\.com\/([^/]+)/i);
+            if (m && m[1]) contactHref = 'https://github.com/' + m[1];
+          } catch (_) {}
+        }
+        if (contactHref) {
+          contactLink.href = contactHref;
+          contactLink.setAttribute('target', '_blank');
+          contactLink.setAttribute('rel', 'noopener');
+        }
+        document.getElementById('closeBtn').addEventListener('click', function() {
+          window.close();
+        });
+      });
+    })();
+  </script>
+  <!-- Keep styles/scripts light; page should render fast as a modal -->
+  <!-- This page adapts to OS theme via prefers-color-scheme and color-scheme -->
+</head>
+<body>
+  <div class="container">
+    <h1 id="appName">Grok Desktop</h1>
+    <p class="small" id="version">Version: 0.0.0</p>
+    <p class="small" id="developerLine">Developer: <a id="developerLink" href="#">AnRkey</a></p>
+    <p><a id="repoLink" href="#">GitHub Repository</a></p>
+    <p><a id="contactLink" href="#">Discussion Forums</a></p>
+    <div class="actions">
+      <button id="closeBtn" type="button">Close</button>
+    </div>
+  </div>
+  <!-- No external resources to keep it robust offline -->
+  <!-- End -->
+  </body>
+</html>
+
+

@@ -1,5 +1,5 @@
 
-const { app, BrowserWindow, shell, Menu, ipcMain, nativeTheme, session, webContents } = require('electron');
+const { app, BrowserWindow, shell, Menu, ipcMain, nativeTheme, session, webContents, dialog } = require('electron');
 
 // Handle open-external-url from renderer
 ipcMain.handle('open-external-url', async (_event, url) => {
@@ -13,6 +13,7 @@ const path = require('path');
 
 // Keep a global reference of the window object to prevent garbage collection
 let mainWindow;
+let aboutWindow;
 
 // Allow autoplay without user gesture (for seamless audio playback)
 try { app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required'); } catch (_) {}
@@ -216,6 +217,78 @@ function setupIpcHandlers() {
       return app.getVersion();
     } catch (_) {
       return '0.0.0';
+    }
+  });
+
+  // Show About window with clickable GitHub link; adapts to OS theme
+  ipcMain.handle('show-app-info', async () => {
+    const name = typeof app.getName === 'function' ? app.getName() : 'Grok Desktop';
+    const version = typeof app.getVersion === 'function' ? app.getVersion() : '0.0.0';
+    const repoUrl = 'https://github.com/AnRkey/Grok-Desktop';
+
+    try {
+      if (aboutWindow && !aboutWindow.isDestroyed()) {
+        aboutWindow.focus();
+        return { name, version };
+      }
+
+      aboutWindow = new BrowserWindow({
+        width: 380,
+        height: 350,
+        resizable: false,
+        minimizable: false,
+        maximizable: false,
+        fullscreenable: false,
+        show: false,
+        parent: mainWindow,
+        modal: true,
+        backgroundColor: nativeTheme.shouldUseDarkColors ? '#202124' : '#ffffff',
+        webPreferences: {
+          javascript: true,
+          nodeIntegration: false,
+          contextIsolation: true,
+          sandbox: true
+        }
+      });
+      aboutWindow.setMenuBarVisibility(false);
+
+      // Ensure external links open in system browser
+      aboutWindow.webContents.setWindowOpenHandler(({ url }) => {
+        try { shell.openExternal(url); } catch (_) {}
+        return { action: 'deny' };
+      });
+      aboutWindow.webContents.on('will-navigate', (event, url) => {
+        if (typeof url === 'string' && url.startsWith('http')) {
+          event.preventDefault();
+          try { shell.openExternal(url); } catch (_) {}
+        }
+      });
+
+      const urlObj = new URL(`file://${path.join(__dirname, '../about.html')}`);
+      urlObj.searchParams.set('name', name);
+      urlObj.searchParams.set('version', version);
+      urlObj.searchParams.set('repo', repoUrl);
+      // Derive developer/contact from the GitHub repo URL
+      let developer = 'AnRkey';
+      try {
+        const m = repoUrl.match(/^https?:\/\/github\.com\/([^/]+)/i);
+        if (m && m[1]) developer = m[1];
+      } catch (_) {}
+      const contactUrl = 'https://github.com/AnRkey/Grok-Desktop/discussions';
+      urlObj.searchParams.set('developer', developer);
+      urlObj.searchParams.set('contact', contactUrl);
+
+      await aboutWindow.loadURL(urlObj.toString());
+      aboutWindow.once('ready-to-show', () => aboutWindow && aboutWindow.show());
+      aboutWindow.on('closed', () => { aboutWindow = null; });
+
+      return { name, version };
+    } catch (_) {
+      if (aboutWindow && !aboutWindow.isDestroyed()) {
+        try { aboutWindow.close(); } catch (_) {}
+      }
+      aboutWindow = null;
+      return { name, version };
     }
   });
 

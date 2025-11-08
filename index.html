@@ -265,6 +265,7 @@
   <button class="reload-button" id="reload-button" title="Reload current tab">↻</button>
   <button class="aot-button" id="aot-button" title="Always on top">AOT</button>
   <button class="aot-button" id="update-btn" style="margin-left:8px;display:none;background:#ff3333;color:#fff;border-color:#cc0000;" title="Update available">↑</button>
+  <button class="aot-button" id="info-btn" style="margin-left:8px;" title="About">i</button>
     </div>
   </div>
   <div class="views-container" id="views"></div>
@@ -738,6 +739,16 @@
             window.ipcRenderer.invoke('open-external-url', url);
           } else if (typeof ipcRenderer !== 'undefined') {
             ipcRenderer.invoke('open-external-url', url);
+          }
+        });
+      }
+      const infoBtn = document.getElementById('info-btn');
+      if (infoBtn) {
+        infoBtn.addEventListener('click', () => {
+          if (window.ipcRenderer) {
+            window.ipcRenderer.invoke('show-app-info');
+          } else if (typeof ipcRenderer !== 'undefined') {
+            ipcRenderer.invoke('show-app-info');
           }
         });
       }
