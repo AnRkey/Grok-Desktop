@@ -42,21 +42,18 @@ Grok-Desktop is an Nativefier-based desktop application for Windows 10 and 11 th
 ## Build Grok-Desktop
 1. Install Node.js from [nodejs.org](https://nodejs.org/).
 2. Clone this repository or download the files.
-3. Run `build.bat` to build the application.
+3. Install dependencies if needed: `npm install`
+4. Build using npm scripts:
+   - Directory build (unpacked): `npm run build-dir`
+   - Portable executable: `npm run build-portable`
+   - Full installers (NSIS + MSI): `npm run build-installer`
 
-The build script will automatically:
-- Clean previous build files
-- Create the build directory
-- Check for Node.js and npm installation
-- Configure npm for optimal performance
-- Install project dependencies if needed
-- Install electron-builder globally
-- Build the NSIS installer application
-- All build outputs will be placed in the `build` directory.
+Notes:
+- These scripts use `npx electron-builder@latest` (no global install required).
+- All build outputs are written to the `build` directory.
 
 ## Usage
-- Run the build.bat file to build Grok-Desktop and its installer.
-- Install `Grok-Desktop` with the Grok-Desktop_Installer_v1.2.3.exe from the build directory
+- After building, install `Grok-Desktop` with `Grok-Desktop_Installer-v1.2.3.exe` from the `build` directory
 - Launch `Grok-Desktop` from the Start Menu
 - Log in via `grok.com`, using Google, Apple, or xAI authentication as needed.
 - Use the + button in the top toolbar to add new tabs.

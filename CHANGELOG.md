@@ -26,6 +26,17 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Changed
+- Update Electron to 39.x (incrementally 36 → 37 → 38 → 39)
+- Use electron-builder via npx in npm scripts (no global install required)
+
+### Removed
+- Remove unused dependency: electron-store
+- Remove `brace-expansion` overrides after verification
+
+### Security
+- Verified `brace-expansion` advisories (CVE-2025-5889); ensured no affected versions in tree
+
 ## [1.2.1] - 2025-08-16
 
 ### Changed
