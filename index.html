@@ -216,9 +216,18 @@
     }
 
     .reload-button.loading {
-      animation: spin-reload 1s linear infinite;
       pointer-events: none;
       opacity: 0.7;
+    }
+
+    .reload-icon {
+      display: inline-block;
+      transform-origin: center;
+      pointer-events: none;
+    }
+
+    .reload-button.loading .reload-icon {
+      animation: spin-reload 1s linear infinite;
     }
 
     @keyframes spin-reload {
@@ -262,7 +271,7 @@
     <button class="tabs-scroll tabs-scroll-right" id="tabs-scroll-right" aria-hidden="true">&#x203A;</button>
     <div class="app-controls">
   <div id="update-indicator" style="margin-right:8px;font-size:12px;opacity:0.9;cursor:pointer;text-decoration:underline;display:none;"></div>
-  <button class="reload-button" id="reload-button" title="Reload current tab">↻</button>
+  <button class="reload-button" id="reload-button" title="Reload current tab"><span class="reload-icon">↻</span></button>
   <button class="aot-button" id="aot-button" title="Always on top">AOT</button>
   <button class="aot-button" id="update-btn" style="margin-left:8px;display:none;background:#ff3333;color:#fff;border-color:#cc0000;" title="Update available">↑</button>
   <button class="aot-button" id="info-btn" style="margin-left:8px;" title="About">i</button>
