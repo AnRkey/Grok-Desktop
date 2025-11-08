@@ -74,7 +74,7 @@
     "portable": {
       "artifactName": "Grok-Desktop_Portable-v${version}.exe"
     },
-    "compression": "store",
+    "compression": "maximum",
     "asar": true,
     "asarUnpack": [],
     "extraResources": [],
