@@ -81,32 +81,12 @@ if %ERRORLEVEL% NEQ 0 (
   goto :error
 )
 
-:: Build archive targets separately with custom artifact names
+::: Build archive targets separately (artifact names set in package.json)
 echo Building 7z archive...
 call npx --yes electron-builder@latest --win 7z --x64 --publish=never
 
-:: Rename 7z archive to follow naming convention
-if exist "build\*.7z" (
-  for %%f in ("build\*.7z") do (
-    if not "%%~nf"=="Grok-Desktop_Archive-v1.2.2" (
-      echo Renaming %%f to Grok-Desktop_Archive-v1.2.2.7z
-      move "%%f" "build\Grok-Desktop_Archive-v1.2.2.7z" >nul
-    )
-  )
-)
-
 echo Building zip archive...
 call npx --yes electron-builder@latest --win zip --x64 --publish=never
-
-:: Rename zip archive to follow naming convention
-if exist "build\*.zip" (
-  for %%f in ("build\*.zip") do (
-    if not "%%~nf"=="Grok-Desktop_Archive-v1.2.2" (
-      echo Renaming %%f to Grok-Desktop_Archive-v1.2.2.zip
-      move "%%f" "build\Grok-Desktop_Archive-v1.2.2.zip" >nul
-    )
-  )
-)
 
 :: Check if build was successful
 if %ERRORLEVEL% EQU 0 (

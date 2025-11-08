@@ -58,7 +58,8 @@
         }
       ],
       "icon": "src/grok.png",
-      "forceCodeSigning": false
+      "forceCodeSigning": false,
+      "artifactName": "Grok-Desktop_Archive-v${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,

@@ -234,7 +234,7 @@ function setupIpcHandlers() {
 
       aboutWindow = new BrowserWindow({
         width: 380,
-        height: 350,
+        height: 360,
         resizable: false,
         minimizable: false,
         maximizable: false,
