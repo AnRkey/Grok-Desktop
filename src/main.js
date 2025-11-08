@@ -1,5 +1,5 @@
 
-const { app, BrowserWindow, shell, Menu, ipcMain, nativeTheme, session, webContents } = require('electron');
+const { app, BrowserWindow, shell, Menu, ipcMain, nativeTheme, session, webContents, dialog } = require('electron');
 
 // Handle open-external-url from renderer
 ipcMain.handle('open-external-url', async (_event, url) => {
@@ -13,6 +13,7 @@ const path = require('path');
 
 // Keep a global reference of the window object to prevent garbage collection
 let mainWindow;
+let aboutWindow;
 
 // Allow autoplay without user gesture (for seamless audio playback)
 try { app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required'); } catch (_) {}
@@ -60,6 +61,9 @@ function createWindow() {
 
   // Disable the menu bar
   Menu.setApplicationMenu(null);
+
+  // Ensure shortcuts work when focus is on the main window UI
+  try { attachShortcutHandlers(mainWindow.webContents); } catch (_) {}
 
   // Load the index.html file
   mainWindow.loadFile(path.join(__dirname, '../index.html'));
@@ -139,6 +143,9 @@ function createWindow() {
   // Enable right-click context menus
   setupContextMenus();
 
+  // Set up keyboard shortcuts (Ctrl+T, Ctrl+Tab, Ctrl+R)
+  setupKeyboardShortcuts();
+
   // Ensure newly created webContents/webviews get correct color scheme
   app.on('web-contents-created', (_event, contents) => {
     const scheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
@@ -210,6 +217,78 @@ function setupIpcHandlers() {
       return app.getVersion();
     } catch (_) {
       return '0.0.0';
+    }
+  });
+
+  // Show About window with clickable GitHub link; adapts to OS theme
+  ipcMain.handle('show-app-info', async () => {
+    const name = typeof app.getName === 'function' ? app.getName() : 'Grok Desktop';
+    const version = typeof app.getVersion === 'function' ? app.getVersion() : '0.0.0';
+    const repoUrl = 'https://github.com/AnRkey/Grok-Desktop';
+
+    try {
+      if (aboutWindow && !aboutWindow.isDestroyed()) {
+        aboutWindow.focus();
+        return { name, version };
+      }
+
+      aboutWindow = new BrowserWindow({
+        width: 380,
+        height: 360,
+        resizable: false,
+        minimizable: false,
+        maximizable: false,
+        fullscreenable: false,
+        show: false,
+        parent: mainWindow,
+        modal: true,
+        backgroundColor: nativeTheme.shouldUseDarkColors ? '#202124' : '#ffffff',
+        webPreferences: {
+          javascript: true,
+          nodeIntegration: false,
+          contextIsolation: true,
+          sandbox: true
+        }
+      });
+      aboutWindow.setMenuBarVisibility(false);
+
+      // Ensure external links open in system browser
+      aboutWindow.webContents.setWindowOpenHandler(({ url }) => {
+        try { shell.openExternal(url); } catch (_) {}
+        return { action: 'deny' };
+      });
+      aboutWindow.webContents.on('will-navigate', (event, url) => {
+        if (typeof url === 'string' && url.startsWith('http')) {
+          event.preventDefault();
+          try { shell.openExternal(url); } catch (_) {}
+        }
+      });
+
+      const urlObj = new URL(`file://${path.join(__dirname, '../about.html')}`);
+      urlObj.searchParams.set('name', name);
+      urlObj.searchParams.set('version', version);
+      urlObj.searchParams.set('repo', repoUrl);
+      // Derive developer/contact from the GitHub repo URL
+      let developer = 'AnRkey';
+      try {
+        const m = repoUrl.match(/^https?:\/\/github\.com\/([^/]+)/i);
+        if (m && m[1]) developer = m[1];
+      } catch (_) {}
+      const contactUrl = 'https://github.com/AnRkey/Grok-Desktop/discussions';
+      urlObj.searchParams.set('developer', developer);
+      urlObj.searchParams.set('contact', contactUrl);
+
+      await aboutWindow.loadURL(urlObj.toString());
+      aboutWindow.once('ready-to-show', () => aboutWindow && aboutWindow.show());
+      aboutWindow.on('closed', () => { aboutWindow = null; });
+
+      return { name, version };
+    } catch (_) {
+      if (aboutWindow && !aboutWindow.isDestroyed()) {
+        try { aboutWindow.close(); } catch (_) {}
+      }
+      aboutWindow = null;
+      return { name, version };
     }
   });
 
@@ -371,6 +450,59 @@ function setupPermissions() {
   try {
     app.on('web-contents-created', (_event, contents) => {
       try { if (typeof contents.setAudioMuted === 'function') contents.setAudioMuted(false); } catch (_) {}
+    });
+  } catch (_) {}
+}
+
+// Keyboard shortcuts wired at the webContents level so they work in webviews too
+function setupKeyboardShortcuts() {
+  try {
+    app.on('web-contents-created', (_event, contents) => attachShortcutHandlers(contents));
+  } catch (_) {}
+}
+
+function attachShortcutHandlers(contents) {
+  try {
+    contents.on('before-input-event', (event, input) => {
+      try {
+        // Only handle keyDown with Control on Windows/Linux
+        if (input.type !== 'keyDown' || !input.control) return;
+
+        const key = input.key;
+        // Deliver to the hosting window (handles webviews as well)
+        const host = contents.hostWebContents || contents;
+        const win = BrowserWindow.fromWebContents(host);
+        if (!win || win.isDestroyed()) return;
+
+        // Ctrl+T -> new tab
+        if (key === 't' || key === 'T') {
+          event.preventDefault();
+          win.webContents.send('shortcut-new-tab');
+          return;
+        }
+        // Ctrl+Tab -> next tab, Ctrl+Shift+Tab -> previous tab
+        if (key === 'Tab') {
+          event.preventDefault();
+          if (input.shift) {
+            win.webContents.send('shortcut-prev-tab');
+          } else {
+            win.webContents.send('shortcut-next-tab');
+          }
+          return;
+        }
+        // Ctrl+R -> reload active tab (override default window reload)
+        if (key === 'r' || key === 'R') {
+          event.preventDefault();
+          win.webContents.send('shortcut-reload-tab');
+          return;
+        }
+        // Ctrl+I -> show information/about dialog
+        if (key === 'i' || key === 'I') {
+          event.preventDefault();
+          win.webContents.send('shortcut-show-info');
+          return;
+        }
+      } catch (_) {}
     });
   } catch (_) {}
 }

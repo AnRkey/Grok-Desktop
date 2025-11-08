@@ -1,6 +1,6 @@
 {
   "name": "Grok-Desktop",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Grok-Desktop application for Grok.com with tab support",
   "main": "src/main.js",
   "scripts": {
@@ -21,17 +21,14 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "electron-store": "^10.0.1",
     "electron-tabs": "^1.0.4"
   },
   "devDependencies": {
-    "electron": "35.7.5"
+    "electron": "^39.1.1"
   },
   "overrides": {
     "form-data": "4.0.4",
-    "tmp": "0.2.4",
-    "brace-expansion@1": "1.1.13",
-    "brace-expansion@2": "2.0.2"
+    "tmp": "latest"
   },
   "build": {
     "appId": "com.grok.desktop",
@@ -61,7 +58,8 @@
         }
       ],
       "icon": "src/grok.png",
-      "forceCodeSigning": false
+      "forceCodeSigning": false,
+      "artifactName": "Grok-Desktop_Archive-v${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,
@@ -77,8 +75,8 @@
     "portable": {
       "artifactName": "Grok-Desktop_Portable-v${version}.exe"
     },
-  "compression": "store",
-  "asar": true,
+    "compression": "maximum",
+    "asar": true,
     "asarUnpack": [],
     "extraResources": [],
     "files": [

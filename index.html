@@ -195,6 +195,46 @@
       border-color: #4CAF50;
     }
 
+    .reload-button {
+      background: none;
+      border: 1px solid var(--color-aot-border);
+      border-radius: 4px;
+      margin-right: 5px;
+      padding: 2px 6px;
+      font-size: 16px;
+      cursor: pointer;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      color: var(--color-text);
+    }
+
+    .reload-button:hover {
+      background-color: var(--color-aot-hover);
+    }
+
+    .reload-button.loading {
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    .reload-icon {
+      display: inline-block;
+      transform-origin: center;
+      pointer-events: none;
+    }
+
+    .reload-button.loading .reload-icon {
+      animation: spin-reload 1s linear infinite;
+    }
+
+    @keyframes spin-reload {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
     .views-container {
       height: calc(100vh - 40px);
       width: 100%;
@@ -231,8 +271,10 @@
     <button class="tabs-scroll tabs-scroll-right" id="tabs-scroll-right" aria-hidden="true">&#x203A;</button>
     <div class="app-controls">
   <div id="update-indicator" style="margin-right:8px;font-size:12px;opacity:0.9;cursor:pointer;text-decoration:underline;display:none;"></div>
+  <button class="reload-button" id="reload-button" title="Reload current tab"><span class="reload-icon">↻</span></button>
   <button class="aot-button" id="aot-button" title="Always on top">AOT</button>
   <button class="aot-button" id="update-btn" style="margin-left:8px;display:none;background:#ff3333;color:#fff;border-color:#cc0000;" title="Update available">↑</button>
+  <button class="aot-button" id="info-btn" style="margin-left:8px;" title="About">i</button>
     </div>
   </div>
   <div class="views-container" id="views"></div>
@@ -320,6 +362,26 @@
       init() {
         // Create the new tab button
         this.createNewTabButton();
+        
+        // Set up reload button
+        const reloadButton = document.getElementById('reload-button');
+        reloadButton.addEventListener('click', () => {
+          const activeTab = this.tabs.find(tab => tab.id === this.activeTabId);
+          if (activeTab && activeTab.webview) {
+            // Add loading state
+            reloadButton.classList.add('loading');
+
+            // Remove loading state when page finishes loading
+            const removeLoading = () => {
+              reloadButton.classList.remove('loading');
+              activeTab.webview.removeEventListener('did-stop-loading', removeLoading);
+            };
+            activeTab.webview.addEventListener('did-stop-loading', removeLoading);
+
+            // Reload the webview (after listener is attached)
+            activeTab.webview.reload();
+          }
+        });
         
         // Set up AOT button
         const aotButton = document.getElementById('aot-button');
@@ -530,6 +592,43 @@
         return tabId;
       },
 
+      activateNextTab() {
+        if (!this.tabs.length) return;
+        if (!this.activeTabId) {
+          this.activateTab(this.tabs[0].id);
+          return;
+        }
+        const currentIndex = this.tabs.findIndex(t => t.id === this.activeTabId);
+        const nextIndex = (currentIndex + 1) % this.tabs.length;
+        this.activateTab(this.tabs[nextIndex].id);
+      },
+
+      activatePrevTab() {
+        if (!this.tabs.length) return;
+        if (!this.activeTabId) {
+          this.activateTab(this.tabs[0].id);
+          return;
+        }
+        const currentIndex = this.tabs.findIndex(t => t.id === this.activeTabId);
+        const prevIndex = (currentIndex - 1 + this.tabs.length) % this.tabs.length;
+        this.activateTab(this.tabs[prevIndex].id);
+      },
+
+      reloadActiveTab() {
+        const activeTab = this.tabs.find(tab => tab.id === this.activeTabId);
+        if (!activeTab || !activeTab.webview) return;
+        const reloadButton = document.getElementById('reload-button');
+        if (reloadButton) {
+          reloadButton.classList.add('loading');
+          const removeLoading = () => {
+            reloadButton.classList.remove('loading');
+            activeTab.webview.removeEventListener('did-stop-loading', removeLoading);
+          };
+          activeTab.webview.addEventListener('did-stop-loading', removeLoading);
+        }
+        activeTab.webview.reload();
+      },
+
       setupScrollButtons() {
         this.leftBtn = document.getElementById('tabs-scroll-left');
         this.rightBtn = document.getElementById('tabs-scroll-right');
@@ -612,6 +711,27 @@
       }
     };
     
+    // Global shortcut handlers from main process
+    ipcRenderer.on('shortcut-new-tab', () => {
+      tabManager.createTab('https://grok.com');
+    });
+    ipcRenderer.on('shortcut-next-tab', () => {
+      tabManager.activateNextTab();
+    });
+    ipcRenderer.on('shortcut-prev-tab', () => {
+      tabManager.activatePrevTab();
+    });
+    ipcRenderer.on('shortcut-reload-tab', () => {
+      tabManager.reloadActiveTab();
+    });
+    ipcRenderer.on('shortcut-show-info', () => {
+      if (window.ipcRenderer) {
+        window.ipcRenderer.invoke('show-app-info');
+      } else if (typeof ipcRenderer !== 'undefined') {
+        ipcRenderer.invoke('show-app-info');
+      }
+    });
+    
     // Initialize when DOM is loaded
     document.addEventListener('DOMContentLoaded', () => {
       tabManager.init();
@@ -635,6 +755,16 @@
             window.ipcRenderer.invoke('open-external-url', url);
           } else if (typeof ipcRenderer !== 'undefined') {
             ipcRenderer.invoke('open-external-url', url);
+          }
+        });
+      }
+      const infoBtn = document.getElementById('info-btn');
+      if (infoBtn) {
+        infoBtn.addEventListener('click', () => {
+          if (window.ipcRenderer) {
+            window.ipcRenderer.invoke('show-app-info');
+          } else if (typeof ipcRenderer !== 'undefined') {
+            ipcRenderer.invoke('show-app-info');
           }
         });
       }

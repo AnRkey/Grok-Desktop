@@ -1,4 +1,4 @@
-# Grok-Desktop v.1.2.2
+# Grok-Desktop v.1.2.3
 
 ## Description
 Grok-Desktop is an Nativefier-based desktop application for Windows 10 and 11 that wraps `grok.com`, allowing desktop-application-like access to Grok with support for xAI, Google, and Apple authentication.
@@ -9,6 +9,7 @@ Grok-Desktop is an Nativefier-based desktop application for Windows 10 and 11 th
 ## Features
 - Desktop application wrapper for grok.com
 - Tabs functionality for multiple Grok conversations
+- Keyboard shortcuts: Ctrl+T (new tab), Ctrl+Tab / Ctrl+Shift+Tab (cycle tabs), Ctrl+R (reload active tab), Ctrl+I (info/about)
 - Support for xAI, Google, and Apple authentication
 - No menu bar for a cleaner interface
 - Always-on-top function
@@ -16,7 +17,7 @@ Grok-Desktop is an Nativefier-based desktop application for Windows 10 and 11 th
 - Grok speech mode supported **new**
 
 ## Download
-[Download Grok-Desktop_Installer-v1.2.2.exe](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.2/Grok-Desktop_Installer-v1.2.2.exe)
+[Download Grok-Desktop_Installer-v1.2.3.exe](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.3/Grok-Desktop_Installer-v1.2.3.exe)
 
 ## Prerequisites for use
 - Windows 10 or 11
@@ -42,25 +43,34 @@ Grok-Desktop is an Nativefier-based desktop application for Windows 10 and 11 th
 ## Build Grok-Desktop
 1. Install Node.js from [nodejs.org](https://nodejs.org/).
 2. Clone this repository or download the files.
-3. Run `build.bat` to build the application.
+3. Install dependencies if needed: `npm install`
+4. Build using npm scripts:
+   - Directory build (unpacked): `npm run build-dir`
+   - Portable executable: `npm run build-portable`
+   - Full installers (NSIS + MSI): `npm run build-installer`
 
-The build script will automatically:
-- Clean previous build files
-- Create the build directory
-- Check for Node.js and npm installation
-- Configure npm for optimal performance
-- Install project dependencies if needed
-- Install electron-builder globally
-- Build the NSIS installer application
-- All build outputs will be placed in the `build` directory.
+Notes:
+- These scripts use `npx electron-builder@latest` (no global install required).
+- All build outputs are written to the `build` directory.
 
 ## Usage
-- Run the build.bat file to build Grok-Desktop and its installer.
-- Install `Grok-Desktop` with the Grok-Desktop_Installer_v1.2.2.exe from the build directory
+- After building, install `Grok-Desktop` with `Grok-Desktop_Installer-v1.2.3.exe` from the `build` directory
 - Launch `Grok-Desktop` from the Start Menu
 - Log in via `grok.com`, using Google, Apple, or xAI authentication as needed.
-- Use the + button in the top toolbar to add new tabs.
+- Use the + button in the top toolbar (or Ctrl+T) to add new tabs.
 - Click the AOT button in the top right to toggle always-on-top functionality.
+- Use keyboard shortcuts to work faster:
+  - Ctrl+T: Open a new tab
+  - Ctrl+Tab / Ctrl+Shift+Tab: Cycle through open tabs (next/previous)
+  - Ctrl+R: Reload the currently active tab
+  - Ctrl+I: Show information/about dialog
+
+## Keyboard Shortcuts
+- Ctrl+T: Open a new tab
+- Ctrl+Tab: Switch to the next tab
+- Ctrl+Shift+Tab: Switch to the previous tab
+- Ctrl+R: Reload the active tab (does not reload the entire app window)
+- Ctrl+I: Show information/about dialog
 
 ## Support
 Need help? Found a bug? Have a feature request? Please submit an issue on GitHub:
