@@ -195,6 +195,37 @@
       border-color: #4CAF50;
     }
 
+    .reload-button {
+      background: none;
+      border: 1px solid var(--color-aot-border);
+      border-radius: 4px;
+      margin-right: 5px;
+      padding: 2px 6px;
+      font-size: 16px;
+      cursor: pointer;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      color: var(--color-text);
+    }
+
+    .reload-button:hover {
+      background-color: var(--color-aot-hover);
+    }
+
+    .reload-button.loading {
+      animation: spin-reload 1s linear infinite;
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    @keyframes spin-reload {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
     .views-container {
       height: calc(100vh - 40px);
       width: 100%;
@@ -231,6 +262,7 @@
     <button class="tabs-scroll tabs-scroll-right" id="tabs-scroll-right" aria-hidden="true">&#x203A;</button>
     <div class="app-controls">
   <div id="update-indicator" style="margin-right:8px;font-size:12px;opacity:0.9;cursor:pointer;text-decoration:underline;display:none;"></div>
+  <button class="reload-button" id="reload-button" title="Reload current tab">↻</button>
   <button class="aot-button" id="aot-button" title="Always on top">AOT</button>
   <button class="aot-button" id="update-btn" style="margin-left:8px;display:none;background:#ff3333;color:#fff;border-color:#cc0000;" title="Update available">↑</button>
     </div>
@@ -320,6 +352,26 @@
       init() {
         // Create the new tab button
         this.createNewTabButton();
+        
+        // Set up reload button
+        const reloadButton = document.getElementById('reload-button');
+        reloadButton.addEventListener('click', () => {
+          const activeTab = this.tabs.find(tab => tab.id === this.activeTabId);
+          if (activeTab && activeTab.webview) {
+            // Add loading state
+            reloadButton.classList.add('loading');
+            
+            // Reload the webview
+            activeTab.webview.reload();
+            
+            // Remove loading state when page finishes loading
+            const removeLoading = () => {
+              reloadButton.classList.remove('loading');
+              activeTab.webview.removeEventListener('did-stop-loading', removeLoading);
+            };
+            activeTab.webview.addEventListener('did-stop-loading', removeLoading);
+          }
+        });
         
         // Set up AOT button
         const aotButton = document.getElementById('aot-button');

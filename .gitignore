@@ -69,3 +69,6 @@ temp/
 .npm/
 
 # Keep lockfiles tracked (do not ignore package-lock.json)
+
+# Task list
+task-list.md
