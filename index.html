@@ -715,6 +715,13 @@
     ipcRenderer.on('shortcut-reload-tab', () => {
       tabManager.reloadActiveTab();
     });
+    ipcRenderer.on('shortcut-show-info', () => {
+      if (window.ipcRenderer) {
+        window.ipcRenderer.invoke('show-app-info');
+      } else if (typeof ipcRenderer !== 'undefined') {
+        ipcRenderer.invoke('show-app-info');
+      }
+    });
     
     // Initialize when DOM is loaded
     document.addEventListener('DOMContentLoaded', () => {

@@ -496,6 +496,12 @@ function attachShortcutHandlers(contents) {
           win.webContents.send('shortcut-reload-tab');
           return;
         }
+        // Ctrl+I -> show information/about dialog
+        if (key === 'i' || key === 'I') {
+          event.preventDefault();
+          win.webContents.send('shortcut-show-info');
+          return;
+        }
       } catch (_) {}
     });
   } catch (_) {}

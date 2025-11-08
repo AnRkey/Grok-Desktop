@@ -9,7 +9,7 @@ Grok-Desktop is an Nativefier-based desktop application for Windows 10 and 11 th
 ## Features
 - Desktop application wrapper for grok.com
 - Tabs functionality for multiple Grok conversations
-- Keyboard shortcuts: Ctrl+T (new tab), Ctrl+Tab / Ctrl+Shift+Tab (cycle tabs), Ctrl+R (reload active tab)
+- Keyboard shortcuts: Ctrl+T (new tab), Ctrl+Tab / Ctrl+Shift+Tab (cycle tabs), Ctrl+R (reload active tab), Ctrl+I (info/about)
 - Support for xAI, Google, and Apple authentication
 - No menu bar for a cleaner interface
 - Always-on-top function
@@ -63,12 +63,14 @@ Notes:
   - Ctrl+T: Open a new tab
   - Ctrl+Tab / Ctrl+Shift+Tab: Cycle through open tabs (next/previous)
   - Ctrl+R: Reload the currently active tab
+  - Ctrl+I: Show information/about dialog
 
 ## Keyboard Shortcuts
 - Ctrl+T: Open a new tab
 - Ctrl+Tab: Switch to the next tab
 - Ctrl+Shift+Tab: Switch to the previous tab
 - Ctrl+R: Reload the active tab (does not reload the entire app window)
+- Ctrl+I: Show information/about dialog
 
 ## Support
 Need help? Found a bug? Have a feature request? Please submit an issue on GitHub:

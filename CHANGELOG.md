@@ -31,6 +31,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   - Ctrl+T: open new tab
   - Ctrl+Tab / Ctrl+Shift+Tab: cycle through open tabs (next/previous)
   - Ctrl+R reloads the active tab
+  - Ctrl+I: open information/about dialog
 ### Changed
 - Update Electron to 39.x (incrementally 36 → 37 → 38 → 39)
 - Use electron-builder via npx in npm scripts (no global install required)
