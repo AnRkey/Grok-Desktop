@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
 
+## [1.2.3] - 2025-11-08
+
+### Added
+- Reload button functionality and styles in the application UI
+- MSI installer option added to the build script
+
+### Changed
+- Enhanced build process and artifact naming conventions; improved error handling in build script
+- Added explicit compression setting to builds
+- Bump version to 1.2.3
+
 ## [1.2.2] - 2025-09-20
 
 ### Security
@@ -47,7 +58,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ### Added
 - Initial pre-release of Grok Desktop
 
-[Unreleased]: https://github.com/AnRkey/Grok-Desktop/compare/v1.2.1...HEAD
+ [Unreleased]: https://github.com/AnRkey/Grok-Desktop/compare/v1.2.3...HEAD
+[1.2.3]: https://github.com/AnRkey/Grok-Desktop/releases/tag/v1.2.3
+[1.2.2]: https://github.com/AnRkey/Grok-Desktop/releases/tag/v1.2.2
 [1.2.1]: https://github.com/AnRkey/Grok-Desktop/releases/tag/v1.2.1
 [1.2.0]: https://github.com/AnRkey/Grok-Desktop/releases/tag/v1.2.0
 [1.1.0]: https://github.com/AnRkey/Grok-Desktop/releases/tag/v1.1.0
