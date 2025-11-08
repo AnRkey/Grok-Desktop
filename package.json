@@ -24,7 +24,7 @@
     "electron-tabs": "^1.0.4"
   },
   "devDependencies": {
-    "electron": "^36.0.0"
+    "electron": "^37.0.0"
   },
   "overrides": {
     "form-data": "4.0.4",
