@@ -72,3 +72,6 @@ temp/
 
 # Task list
 task-list.md
+
+# Security reports
+security_report.*
