@@ -21,7 +21,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "electron-store": "^10.0.1",
+    "electron-store": "latest",
     "electron-tabs": "^1.0.4"
   },
   "devDependencies": {
