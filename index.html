@@ -361,16 +361,16 @@
           if (activeTab && activeTab.webview) {
             // Add loading state
             reloadButton.classList.add('loading');
-            
-            // Reload the webview
-            activeTab.webview.reload();
-            
+
             // Remove loading state when page finishes loading
             const removeLoading = () => {
               reloadButton.classList.remove('loading');
               activeTab.webview.removeEventListener('did-stop-loading', removeLoading);
             };
             activeTab.webview.addEventListener('did-stop-loading', removeLoading);
+
+            // Reload the webview (after listener is attached)
+            activeTab.webview.reload();
           }
         });
         
