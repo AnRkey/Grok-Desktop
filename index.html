@@ -582,6 +582,43 @@
         return tabId;
       },
 
+      activateNextTab() {
+        if (!this.tabs.length) return;
+        if (!this.activeTabId) {
+          this.activateTab(this.tabs[0].id);
+          return;
+        }
+        const currentIndex = this.tabs.findIndex(t => t.id === this.activeTabId);
+        const nextIndex = (currentIndex + 1) % this.tabs.length;
+        this.activateTab(this.tabs[nextIndex].id);
+      },
+
+      activatePrevTab() {
+        if (!this.tabs.length) return;
+        if (!this.activeTabId) {
+          this.activateTab(this.tabs[0].id);
+          return;
+        }
+        const currentIndex = this.tabs.findIndex(t => t.id === this.activeTabId);
+        const prevIndex = (currentIndex - 1 + this.tabs.length) % this.tabs.length;
+        this.activateTab(this.tabs[prevIndex].id);
+      },
+
+      reloadActiveTab() {
+        const activeTab = this.tabs.find(tab => tab.id === this.activeTabId);
+        if (!activeTab || !activeTab.webview) return;
+        const reloadButton = document.getElementById('reload-button');
+        if (reloadButton) {
+          reloadButton.classList.add('loading');
+          const removeLoading = () => {
+            reloadButton.classList.remove('loading');
+            activeTab.webview.removeEventListener('did-stop-loading', removeLoading);
+          };
+          activeTab.webview.addEventListener('did-stop-loading', removeLoading);
+        }
+        activeTab.webview.reload();
+      },
+
       setupScrollButtons() {
         this.leftBtn = document.getElementById('tabs-scroll-left');
         this.rightBtn = document.getElementById('tabs-scroll-right');
@@ -663,6 +700,20 @@
         }
       }
     };
+    
+    // Global shortcut handlers from main process
+    ipcRenderer.on('shortcut-new-tab', () => {
+      tabManager.createTab('https://grok.com');
+    });
+    ipcRenderer.on('shortcut-next-tab', () => {
+      tabManager.activateNextTab();
+    });
+    ipcRenderer.on('shortcut-prev-tab', () => {
+      tabManager.activatePrevTab();
+    });
+    ipcRenderer.on('shortcut-reload-tab', () => {
+      tabManager.reloadActiveTab();
+    });
     
     // Initialize when DOM is loaded
     document.addEventListener('DOMContentLoaded', () => {

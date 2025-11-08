@@ -61,6 +61,9 @@ function createWindow() {
   // Disable the menu bar
   Menu.setApplicationMenu(null);
 
+  // Ensure shortcuts work when focus is on the main window UI
+  try { attachShortcutHandlers(mainWindow.webContents); } catch (_) {}
+
   // Load the index.html file
   mainWindow.loadFile(path.join(__dirname, '../index.html'));
 
@@ -138,6 +141,9 @@ function createWindow() {
 
   // Enable right-click context menus
   setupContextMenus();
+
+  // Set up keyboard shortcuts (Ctrl+T, Ctrl+Tab, Ctrl+R)
+  setupKeyboardShortcuts();
 
   // Ensure newly created webContents/webviews get correct color scheme
   app.on('web-contents-created', (_event, contents) => {
@@ -371,6 +377,53 @@ function setupPermissions() {
   try {
     app.on('web-contents-created', (_event, contents) => {
       try { if (typeof contents.setAudioMuted === 'function') contents.setAudioMuted(false); } catch (_) {}
+    });
+  } catch (_) {}
+}
+
+// Keyboard shortcuts wired at the webContents level so they work in webviews too
+function setupKeyboardShortcuts() {
+  try {
+    app.on('web-contents-created', (_event, contents) => attachShortcutHandlers(contents));
+  } catch (_) {}
+}
+
+function attachShortcutHandlers(contents) {
+  try {
+    contents.on('before-input-event', (event, input) => {
+      try {
+        // Only handle keyDown with Control on Windows/Linux
+        if (input.type !== 'keyDown' || !input.control) return;
+
+        const key = input.key;
+        // Deliver to the hosting window (handles webviews as well)
+        const host = contents.hostWebContents || contents;
+        const win = BrowserWindow.fromWebContents(host);
+        if (!win || win.isDestroyed()) return;
+
+        // Ctrl+T -> new tab
+        if (key === 't' || key === 'T') {
+          event.preventDefault();
+          win.webContents.send('shortcut-new-tab');
+          return;
+        }
+        // Ctrl+Tab -> next tab, Ctrl+Shift+Tab -> previous tab
+        if (key === 'Tab') {
+          event.preventDefault();
+          if (input.shift) {
+            win.webContents.send('shortcut-prev-tab');
+          } else {
+            win.webContents.send('shortcut-next-tab');
+          }
+          return;
+        }
+        // Ctrl+R -> reload active tab (override default window reload)
+        if (key === 'r' || key === 'R') {
+          event.preventDefault();
+          win.webContents.send('shortcut-reload-tab');
+          return;
+        }
+      } catch (_) {}
     });
   } catch (_) {}
 }
