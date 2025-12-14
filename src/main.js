@@ -56,10 +56,10 @@ const allowedUrlPatterns = [
   /^https?:\/\/x\.com(?:\/|$)/,
   // Allow accounts.x.ai domain and auth-related paths (but not as subdomain)
   /^https?:\/\/accounts\.x\.ai(?:\/|$)/,
-  // Allow exactly accounts.google.com domain only (no subdomains, no additional paths)
-  /^https?:\/\/accounts\.google\.com\/?$/,
-  // Allow exactly appleid.apple.com domain only (no subdomains, no additional paths)
-  /^https?:\/\/appleid\.apple\.com\/?$/
+  // Allow accounts.google.com domain and OAuth paths (but not as subdomain)
+  /^https?:\/\/accounts\.google\.com(?:\/|$)/,
+  // Allow appleid.apple.com domain and OAuth paths (but not as subdomain)
+  /^https?:\/\/appleid\.apple\.com(?:\/|$)/
 ];
 
 // Enforce single instance
@@ -430,11 +430,11 @@ function setupContextMenus() {
       }
 
       // Navigation (for webviews/pages)
-      const canGoBack = typeof contents.canGoBack === 'function' && contents.canGoBack();
-      const canGoForward = typeof contents.canGoForward === 'function' && contents.canGoForward();
+      const canGoBack = contents.navigationHistory && typeof contents.navigationHistory.canGoBack === 'function' && contents.navigationHistory.canGoBack();
+      const canGoForward = contents.navigationHistory && typeof contents.navigationHistory.canGoForward === 'function' && contents.navigationHistory.canGoForward();
       template.push(
-        { label: 'Back', enabled: canGoBack, click: () => contents.goBack && contents.goBack() },
-        { label: 'Forward', enabled: canGoForward, click: () => contents.goForward && contents.goForward() },
+        { label: 'Back', enabled: canGoBack, click: () => contents.navigationHistory && contents.navigationHistory.goBack && contents.navigationHistory.goBack() },
+        { label: 'Forward', enabled: canGoForward, click: () => contents.navigationHistory && contents.navigationHistory.goForward && contents.navigationHistory.goForward() },
         { label: 'Reload', click: () => contents.reload && contents.reload() }
       );
 

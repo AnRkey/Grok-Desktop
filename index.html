@@ -548,10 +548,10 @@
             /^https?:\/\/x\.com(?:\/|$)/,
             // Allow accounts.x.ai domain and auth-related paths (but not as subdomain)
             /^https?:\/\/accounts\.x\.ai(?:\/|$)/,
-            // Allow exactly accounts.google.com domain only (no subdomains, no additional paths)
-            /^https?:\/\/accounts\.google\.com\/?$/,
-            // Allow exactly appleid.apple.com domain only (no subdomains, no additional paths)
-            /^https?:\/\/appleid\.apple\.com\/?$/
+            // Allow accounts.google.com domain and OAuth paths (but not as subdomain)
+            /^https?:\/\/accounts\.google\.com(?:\/|$)/,
+            // Allow appleid.apple.com domain and OAuth paths (but not as subdomain)
+            /^https?:\/\/appleid\.apple\.com(?:\/|$)/
           ];
           // Explicitly treat auth/navigation endpoints as internal and navigate in same tab
           if (/^https?:\/\/grok\.com\/sign-in(\b|\/|\?|#)/i.test(url)
@@ -587,8 +587,8 @@
                            /^https?:\/\/x\.ai(?:\/|$)/.test(url) ||
                            /^https?:\/\/x\.com(?:\/|$)/.test(url) ||
                            /^https?:\/\/accounts\.x\.ai(?:\/|$)/.test(url) ||
-                           /^https?:\/\/accounts\.google\.com\/?$/.test(url) ||
-                           /^https?:\/\/appleid\.apple\.com\/?$/.test(url);
+                           /^https?:\/\/accounts\.google\.com(?:\/|$)/.test(url) ||
+                           /^https?:\/\/appleid\.apple\.com(?:\/|$)/.test(url);
           if (!internal) {
             e.preventDefault();
             require('electron').shell.openExternal(url);
