@@ -328,6 +328,52 @@ function setupIpcHandlers() {
     }
   });
 
+  // Fetch Grok usage rate limits
+  ipcMain.handle('fetch-grok-rate-limits', async () => {
+    try {
+      const grokSession = session.fromPartition('persist:grok');
+
+      // Helper function to fetch rate limits for a specific model
+      const fetchRateLimits = async (requestKind, modelName) => {
+        try {
+          // Use session.fetch which properly includes cookies
+          const response = await grokSession.fetch('https://grok.com/rest/rate-limits', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ requestKind, modelName })
+          });
+
+          if (response.status === 401 || response.status === 403) {
+            return { error: 'UNAUTHORIZED' };
+          }
+
+          if (!response.ok) {
+            return { error: `HTTP ${response.status}` };
+          }
+
+          return await response.json();
+        } catch (e) {
+          return { error: e.message };
+        }
+      };
+
+      // Fetch both default and grok-4-heavy limits in parallel
+      const [defaultLimits, grok4HeavyLimits] = await Promise.all([
+        fetchRateLimits('DEFAULT', 'grok-3'),
+        fetchRateLimits('DEFAULT', 'grok-4-heavy')
+      ]);
+
+      return {
+        DEFAULT: defaultLimits,
+        GROK4HEAVY: grok4HeavyLimits
+      };
+    } catch (error) {
+      return { error: error.message };
+    }
+  });
+
   // Force light/dynamic color scheme for specific webContents id
   ipcMain.handle('force-light-color-scheme', (_event, wcId, shouldForceLight) => {
     try {

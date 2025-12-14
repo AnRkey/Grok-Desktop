@@ -262,6 +262,79 @@
       border: none;
       background-color: var(--color-bg-content);
     }
+
+    .usage-status-bar {
+      display: none;
+      min-height: 32px;
+      background-color: var(--color-bg-toolbar);
+      border-top: 1px solid var(--color-border);
+      padding: 0 12px 8px 12px;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 24px;
+      font-size: 12px;
+      color: var(--color-text);
+      flex-shrink: 0;
+      box-sizing: content-box;
+    }
+
+    .usage-status-bar.active {
+      display: flex;
+    }
+
+    .usage-stat {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .usage-label {
+      opacity: 0.7;
+    }
+
+    .usage-value {
+      font-weight: 600;
+    }
+
+    .usage-value.warning {
+      color: #f39c12;
+    }
+
+    .usage-value.critical {
+      color: #e74c3c;
+    }
+
+    .usage-refill .usage-value {
+      color: #3498db;
+    }
+
+    .usage-toggle {
+      padding: 2px 6px;
+      cursor: pointer;
+      opacity: 0.7;
+      transition: opacity 0.2s ease;
+      font-size: 14px;
+      user-select: none;
+      order: -1;
+      margin-right: -19px;
+    }
+
+    .usage-toggle:hover {
+      opacity: 1;
+    }
+
+    .usage-toggle.hidden .toggle-icon {
+      opacity: 0.4;
+    }
+
+    .usage-stat.hidden-stat {
+      display: none;
+    }
+
+    /* Adjust views container height when status bar is active */
+    body.usage-bar-active .views-container {
+      height: calc(100vh - 40px - 41px);
+    }
   </style>
 </head>
 <body>
@@ -274,10 +347,32 @@
   <button class="reload-button" id="reload-button" title="Reload current tab"><span class="reload-icon">↻</span></button>
   <button class="aot-button" id="aot-button" title="Always on top">AOT</button>
   <button class="aot-button" id="update-btn" style="margin-left:8px;display:none;background:#ff3333;color:#fff;border-color:#cc0000;" title="Update available">↑</button>
+  <button class="aot-button" id="usage-btn" style="margin-left:8px;" title="Toggle Usage Stats">u</button>
   <button class="aot-button" id="info-btn" style="margin-left:8px;" title="About">i</button>
     </div>
   </div>
   <div class="views-container" id="views"></div>
+  <div class="usage-status-bar" id="usage-status-bar">
+    <div class="usage-stat">
+      <span class="usage-label">Low Effort:</span>
+      <span class="usage-value" id="usage-low-effort">--</span>
+    </div>
+    <div class="usage-stat">
+      <span class="usage-label">High Effort:</span>
+      <span class="usage-value" id="usage-high-effort">--</span>
+    </div>
+    <div class="usage-stat" id="usage-grok4-container">
+      <span class="usage-label">Grok 4 Heavy:</span>
+      <span class="usage-value" id="usage-grok4-heavy">--</span>
+    </div>
+    <div class="usage-stat usage-refill" id="usage-refill-container" style="display:none;">
+      <span class="usage-label">Refill:</span>
+      <span class="usage-value" id="usage-refill">--</span>
+    </div>
+    <div class="usage-toggle" id="usage-grok4-toggle" title="Toggle Grok 4 Heavy stats">
+      <span class="toggle-icon">👁</span>
+    </div>
+  </div>
 
   <script>
     // Simple tab management
@@ -749,9 +844,198 @@
       }
     });
     
+    // Usage stats management
+    const usageStats = {
+      isActive: false,
+      refreshInterval: null,
+      statusBar: null,
+      button: null,
+      grok4Hidden: false,
+      
+      init() {
+        this.statusBar = document.getElementById('usage-status-bar');
+        this.button = document.getElementById('usage-btn');
+        
+        if (this.button) {
+          this.button.addEventListener('click', () => this.toggle());
+        }
+        
+        // Load usage bar visibility preference
+        try {
+          this.isActive = localStorage.getItem('grokDesktopUsageBarActive') === 'true';
+        } catch (e) {}
+        
+        // Apply saved state on startup
+        if (this.isActive) {
+          this.button.classList.add('active');
+          this.statusBar.classList.add('active');
+          document.body.classList.add('usage-bar-active');
+          this.fetchStats();
+          this.refreshInterval = setInterval(() => this.fetchStats(), 5000);
+        }
+        
+        // Load Grok 4 visibility preference
+        try {
+          this.grok4Hidden = localStorage.getItem('grokDesktopHideGrok4') === 'true';
+        } catch (e) {}
+        
+        // Set up Grok 4 toggle
+        const grok4Toggle = document.getElementById('usage-grok4-toggle');
+        const grok4Container = document.getElementById('usage-grok4-container');
+        if (grok4Toggle && grok4Container) {
+          this.applyGrok4Visibility();
+          grok4Toggle.addEventListener('click', () => this.toggleGrok4());
+        }
+      },
+      
+      toggleGrok4() {
+        this.grok4Hidden = !this.grok4Hidden;
+        try {
+          localStorage.setItem('grokDesktopHideGrok4', this.grok4Hidden);
+        } catch (e) {}
+        this.applyGrok4Visibility();
+      },
+      
+      applyGrok4Visibility() {
+        const grok4Toggle = document.getElementById('usage-grok4-toggle');
+        const grok4Container = document.getElementById('usage-grok4-container');
+        if (this.grok4Hidden) {
+          grok4Container.classList.add('hidden-stat');
+          grok4Toggle.classList.add('hidden');
+        } else {
+          grok4Container.classList.remove('hidden-stat');
+          grok4Toggle.classList.remove('hidden');
+        }
+      },
+      
+      toggle() {
+        this.isActive = !this.isActive;
+        
+        // Save state to localStorage
+        try {
+          localStorage.setItem('grokDesktopUsageBarActive', this.isActive);
+        } catch (e) {}
+        
+        if (this.isActive) {
+          this.button.classList.add('active');
+          this.statusBar.classList.add('active');
+          document.body.classList.add('usage-bar-active');
+          this.fetchStats();
+          // Refresh every 5 seconds when active
+          this.refreshInterval = setInterval(() => this.fetchStats(), 5000);
+        } else {
+          this.button.classList.remove('active');
+          this.statusBar.classList.remove('active');
+          document.body.classList.remove('usage-bar-active');
+          if (this.refreshInterval) {
+            clearInterval(this.refreshInterval);
+            this.refreshInterval = null;
+          }
+        }
+      },
+      
+      async fetchStats() {
+        try {
+          const data = await ipcRenderer.invoke('fetch-grok-rate-limits');
+          this.updateDisplay(data);
+        } catch (error) {
+          this.showError();
+        }
+      },
+      
+      updateDisplay(data) {
+        const lowEffortEl = document.getElementById('usage-low-effort');
+        const highEffortEl = document.getElementById('usage-high-effort');
+        const grok4HeavyEl = document.getElementById('usage-grok4-heavy');
+        const refillContainer = document.getElementById('usage-refill-container');
+        const refillEl = document.getElementById('usage-refill');
+
+        if (data.error || data.DEFAULT?.error) {
+          lowEffortEl.textContent = 'Login required';
+          highEffortEl.textContent = '--';
+          grok4HeavyEl.textContent = '--';
+          refillContainer.style.display = 'none';
+          return;
+        }
+        
+        // Low Effort
+        const lowRemaining = data.DEFAULT?.lowEffortRateLimits?.remainingQueries ?? '--';
+        const totalTokens = data.DEFAULT?.totalTokens ?? null;
+        if (lowRemaining !== '--' && totalTokens) {
+          lowEffortEl.textContent = `${lowRemaining} / ${totalTokens}`;
+          this.applyWarningClass(lowEffortEl, lowRemaining, totalTokens);
+        } else {
+          lowEffortEl.textContent = lowRemaining;
+        }
+        
+        // High Effort
+        const highRemaining = data.DEFAULT?.highEffortRateLimits?.remainingQueries ?? '--';
+        const highCost = data.DEFAULT?.highEffortRateLimits?.cost ?? null;
+        if (highRemaining !== '--' && totalTokens && highCost) {
+          const highTotal = Math.floor(totalTokens / highCost);
+          highEffortEl.textContent = `${highRemaining} / ${highTotal}`;
+          this.applyWarningClass(highEffortEl, highRemaining, highTotal);
+        } else {
+          highEffortEl.textContent = highRemaining;
+        }
+        
+        // Grok 4 Heavy
+        const grok4Remaining = data.GROK4HEAVY?.remainingQueries ?? '--';
+        const grok4Total = data.GROK4HEAVY?.totalQueries ?? null;
+        if (grok4Remaining !== '--' && grok4Total) {
+          grok4HeavyEl.textContent = `${grok4Remaining} / ${grok4Total}`;
+          this.applyWarningClass(grok4HeavyEl, grok4Remaining, grok4Total);
+        } else {
+          grok4HeavyEl.textContent = grok4Remaining;
+        }
+        
+        // Refill time
+        const lowWait = data.DEFAULT?.lowEffortRateLimits?.waitTimeSeconds ?? 0;
+        const highWait = data.DEFAULT?.highEffortRateLimits?.waitTimeSeconds ?? 0;
+        const maxWait = Math.max(lowWait, highWait);
+        
+        if (maxWait > 0) {
+          refillContainer.style.display = 'flex';
+          refillEl.textContent = this.formatTime(maxWait);
+        } else {
+          refillContainer.style.display = 'none';
+        }
+      },
+      
+      applyWarningClass(element, remaining, total) {
+        element.classList.remove('warning', 'critical');
+        if (typeof remaining === 'number' && typeof total === 'number' && total > 0) {
+          const ratio = remaining / total;
+          if (ratio <= 0.1) {
+            element.classList.add('critical');
+          } else if (ratio <= 0.25) {
+            element.classList.add('warning');
+          }
+        }
+      },
+      
+      formatTime(seconds) {
+        if (!seconds || seconds <= 0) return '';
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        if (minutes > 0) {
+          return `${minutes}m ${remainingSeconds}s`;
+        }
+        return `${remainingSeconds}s`;
+      },
+      
+      showError() {
+        document.getElementById('usage-low-effort').textContent = 'Error';
+        document.getElementById('usage-high-effort').textContent = '--';
+        document.getElementById('usage-grok4-heavy').textContent = '--';
+        document.getElementById('usage-refill-container').style.display = 'none';
+      }
+    };
+
     // Initialize when DOM is loaded
     document.addEventListener('DOMContentLoaded', () => {
       tabManager.init();
+      usageStats.init();
       // Click to open latest release page
       const indicator = document.getElementById('update-indicator');
       if (indicator) {
