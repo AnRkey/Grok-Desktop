@@ -438,11 +438,6 @@ function setupContextMenus() {
         { label: 'Reload', click: () => contents.reload && contents.reload() }
       );
 
-      // Inspect element for debugging
-      template.push({ type: 'separator' }, {
-        label: 'Inspect Element',
-        click: () => contents.inspectElement(params.x, params.y)
-      });
 
       const menu = Menu.buildFromTemplate(template);
       const win = BrowserWindow.fromWebContents(contents);
