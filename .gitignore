@@ -74,4 +74,8 @@ temp/
 task-list.md
 
 # Security reports
-security_report.*
+security_reports/
+
+# Task lists
+tasklist.md
+
