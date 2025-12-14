@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
 
+## [1.2.4] - 2025-12-14
+
+### Security
+- **Domain Bypass Protection** - Prevents malicious subdomain attacks on trusted domains
+- **Enhanced External URL Validation** - Validates protocols, hostnames, and blocks localhost/private IPs
+- **Secure Update URL Validation** - Ensures GitHub release URLs are legitimate before storage
+
+### Changed
+- Bump version to 1.2.4
+
 ## [1.2.3] - 2025-11-08
 
 ### Added
@@ -75,7 +85,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ### Added
 - Initial pre-release of Grok Desktop
 
- [Unreleased]: https://github.com/AnRkey/Grok-Desktop/compare/v1.2.3...HEAD
+ [Unreleased]: https://github.com/AnRkey/Grok-Desktop/compare/v1.2.4...HEAD
+[1.2.4]: https://github.com/AnRkey/Grok-Desktop/releases/tag/v1.2.4
 [1.2.3]: https://github.com/AnRkey/Grok-Desktop/releases/tag/v1.2.3
 [1.2.2]: https://github.com/AnRkey/Grok-Desktop/releases/tag/v1.2.2
 [1.2.1]: https://github.com/AnRkey/Grok-Desktop/releases/tag/v1.2.1

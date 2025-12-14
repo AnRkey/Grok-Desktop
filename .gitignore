@@ -75,3 +75,6 @@ tasklist.md
 
 # Security reports
 security_reports/
+
+# Regression test checklist
+REGRESSION_TEST_CHECKLIST.md

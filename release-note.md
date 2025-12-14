@@ -24,7 +24,6 @@ Grok-Desktop is an Electron-based desktop application for Windows 10 and 11 that
 - External links open in default browser; Grok/xAI/Google/Apple auth flows handled in‑app
 - Single-instance app (subsequent launches focus the running window)
 
-## Changes since 1.2.2 (1.2.3 - 2025-11-08)
 - Added
   - About dialog: new About button and `Ctrl+I` shortcut to open it
   - Reload button with icon and improved loading animation
@@ -43,7 +42,15 @@ Grok-Desktop is an Electron-based desktop application for Windows 10 and 11 that
 - Removed
   - Unused dependency: `electron-store`
 
+## Changes since 1.2.3 (1.2.4 - 2025-12-14)
+
+### Security
+- **Domain Bypass Protection** - Prevents malicious subdomain attacks on trusted domains
+- **Enhanced External URL Validation** - Validates protocols, hostnames, and blocks localhost/private IPs
+- **Secure Update URL Validation** - Ensures GitHub release URLs are legitimate before storage
+
 ## Prerequisites for use
 - Windows 10 or 11
 - Internet connection
 - Grok account required. You can sign up in app or use your Google or Apple account to login.
+

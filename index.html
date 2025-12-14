@@ -313,12 +313,22 @@
         if (cmpSemver(latest, cur) > 0) {
           const el = document.getElementById('update-indicator');
           const btn = document.getElementById('update-btn');
-          latestReleaseUrl = data.html_url || `https://github.com/AnRkey/Grok-Desktop/releases/tag/${data.tag_name}`;
-          if (btn) {
-            btn.style.display = 'inline-block';
-            btn.title = `Version ${data.tag_name} available`;
+
+          // Validate and set the release URL
+          let releaseUrl = data.html_url;
+          if (!releaseUrl) {
+            releaseUrl = `https://github.com/AnRkey/Grok-Desktop/releases/tag/${data.tag_name}`;
           }
 
+          // Validate that the URL is a legitimate GitHub release URL
+          const githubReleasePattern = /^https:\/\/github\.com\/AnRkey\/Grok-Desktop\/releases\/tag\/[^/]+$/;
+          if (githubReleasePattern.test(releaseUrl)) {
+            latestReleaseUrl = releaseUrl;
+            if (btn) {
+              btn.style.display = 'inline-block';
+              btn.title = `Version ${data.tag_name} available`;
+            }
+          }
         }
       } catch (_) {}
     }
@@ -530,10 +540,18 @@
         const handleOpenUrl = (targetUrl) => {
           const url = targetUrl;
           const internalPatterns = [
-            /.*\.grok\.com.*/,
-            /.*\.x\.ai.*/,
-            /.*accounts\.google\.com.*/,
-            /.*appleid\.apple\.com.*/
+            // Allow grok.com domain and all its paths (for normal browsing), but not as subdomain
+            /^https?:\/\/grok\.com(?:\/|$)/,
+            // Allow x.ai domain and all its paths (for normal browsing), but not as subdomain
+            /^https?:\/\/x\.ai(?:\/|$)/,
+            // Allow x.com domain for OAuth flows (but not as subdomain)
+            /^https?:\/\/x\.com(?:\/|$)/,
+            // Allow accounts.x.ai domain and auth-related paths (but not as subdomain)
+            /^https?:\/\/accounts\.x\.ai(?:\/|$)/,
+            // Allow exactly accounts.google.com domain only (no subdomains, no additional paths)
+            /^https?:\/\/accounts\.google\.com\/?$/,
+            // Allow exactly appleid.apple.com domain only (no subdomains, no additional paths)
+            /^https?:\/\/appleid\.apple\.com\/?$/
           ];
           // Explicitly treat auth/navigation endpoints as internal and navigate in same tab
           if (/^https?:\/\/grok\.com\/sign-in(\b|\/|\?|#)/i.test(url)
@@ -565,13 +583,12 @@
         // Allow internal same-tab nav; open external in browser
         webview.addEventListener('will-navigate', (e) => {
           const url = e.url;
-          const internal = /.*\.grok\.com.*/.test(url) ||
-                           /.*\.x\.ai.*/.test(url) ||
-                           /.*accounts\.google\.com.*/.test(url) ||
-                           /.*appleid\.apple\.com.*/.test(url) ||
-                           /^https?:\/\/grok\.com\/sign-in(\b|\/|\?|#)/i.test(url) ||
-                           /^https?:\/\/grok\.com\/sign-out(\b|\/|\?|#)/i.test(url) ||
-                           /^https?:\/\/accounts\.x\.ai\/sign-in(\b|\/|\?|#)/i.test(url);
+          const internal = /^https?:\/\/grok\.com(?:\/|$)/.test(url) ||
+                           /^https?:\/\/x\.ai(?:\/|$)/.test(url) ||
+                           /^https?:\/\/x\.com(?:\/|$)/.test(url) ||
+                           /^https?:\/\/accounts\.x\.ai(?:\/|$)/.test(url) ||
+                           /^https?:\/\/accounts\.google\.com\/?$/.test(url) ||
+                           /^https?:\/\/appleid\.apple\.com\/?$/.test(url);
           if (!internal) {
             e.preventDefault();
             require('electron').shell.openExternal(url);

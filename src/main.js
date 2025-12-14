@@ -1,13 +1,41 @@
 
 const { app, BrowserWindow, shell, Menu, ipcMain, nativeTheme, session, webContents, dialog } = require('electron');
 
-// Handle open-external-url from renderer
+// Handle open-external-url from renderer with enhanced validation
 ipcMain.handle('open-external-url', async (_event, url) => {
-  if (typeof url === 'string' && url.startsWith('http')) {
+  try {
+    // Basic type and protocol validation
+    if (typeof url !== 'string' || !url.startsWith('http')) {
+      return false;
+    }
+
+    // Parse URL to validate format and prevent malicious schemes
+    const urlObj = new URL(url);
+
+    // Ensure it's HTTP or HTTPS (not javascript:, data:, etc.)
+    if (!['http:', 'https:'].includes(urlObj.protocol)) {
+      return false;
+    }
+
+    // Basic URL validation - ensure hostname exists and is reasonable
+    if (!urlObj.hostname || urlObj.hostname.length === 0 || urlObj.hostname.length > 253) {
+      return false;
+    }
+
+    // Prevent localhost/private IP access for external URLs
+    const hostname = urlObj.hostname.toLowerCase();
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0' ||
+        hostname.startsWith('192.168.') || hostname.startsWith('10.') ||
+        hostname.startsWith('172.')) {
+      return false;
+    }
+
     await shell.openExternal(url);
     return true;
+  } catch (error) {
+    // Invalid URL format
+    return false;
   }
-  return false;
 });
 const path = require('path');
 
@@ -18,12 +46,20 @@ let aboutWindow;
 // Allow autoplay without user gesture (for seamless audio playback)
 try { app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required'); } catch (_) {}
 
-// Define the allowed URL patterns for internal handling
+// Define the allowed URL patterns for internal handling with secure domain validation
 const allowedUrlPatterns = [
-  /.*\.grok\.com.*/,
-  /.*\.x\.ai.*/,
-  /.*accounts\.google\.com.*/,
-  /.*appleid\.apple\.com.*/
+  // Allow grok.com domain and all its paths (for normal browsing), but not as subdomain
+  /^https?:\/\/grok\.com(?:\/|$)/,
+  // Allow x.ai domain and all its paths (for normal browsing), but not as subdomain
+  /^https?:\/\/x\.ai(?:\/|$)/,
+  // Allow x.com domain for OAuth flows (but not as subdomain)
+  /^https?:\/\/x\.com(?:\/|$)/,
+  // Allow accounts.x.ai domain and auth-related paths (but not as subdomain)
+  /^https?:\/\/accounts\.x\.ai(?:\/|$)/,
+  // Allow exactly accounts.google.com domain only (no subdomains, no additional paths)
+  /^https?:\/\/accounts\.google\.com\/?$/,
+  // Allow exactly appleid.apple.com domain only (no subdomains, no additional paths)
+  /^https?:\/\/appleid\.apple\.com\/?$/
 ];
 
 // Enforce single instance
