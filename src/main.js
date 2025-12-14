@@ -2,6 +2,7 @@
 const { app, BrowserWindow, shell, Menu, ipcMain, nativeTheme, session, webContents, dialog } = require('electron');
 const os = require('os');
 const fs = require('fs');
+const { exec } = require('child_process');
 
 // GPU acceleration detection and graceful fallback
 function configureGpuAcceleration() {
@@ -221,6 +222,82 @@ if (!gotSingleInstanceLock) {
 // Track webContents that should always use light color scheme
 const forcedLightWebContentsIds = new Set();
 
+// Always On Top (AOT) functionality for cross-platform compatibility
+// Windows: Uses Electron's built-in setAlwaysOnTop() method
+// Linux: Uses wmctrl command-line tool for better GNOME/Wayland compatibility
+// If running under Wayland on Linux, automatically restarts with X11 forced
+
+let wmctrlAvailable = false;
+let isWayland = false;
+let x11Forced = false;
+
+function checkWmctrlAvailability() {
+  if (os.platform() !== 'linux') return;
+
+  // Check if we're running under Wayland (Rocky Linux 10 defaults to Wayland)
+  isWayland = !!process.env.WAYLAND_DISPLAY || !!process.env.XDG_SESSION_TYPE?.includes('wayland');
+  x11Forced = process.argv.includes('--ozone-platform=x11');
+
+  console.log(`Grok Desktop: Display server detection - Wayland: ${isWayland}, X11 forced: ${x11Forced}`);
+
+  if (isWayland && !x11Forced) {
+    console.log('Grok Desktop: Running under Wayland, forcing X11 for AOT compatibility');
+    // GNOME on Wayland intentionally restricts programmatic AOT for security
+    // We force X11 mode where wmctrl works reliably
+    forceX11Mode();
+    return;
+  }
+
+  // Check if wmctrl is available (install with: sudo dnf install wmctrl on Rocky Linux)
+  exec('which wmctrl', (error) => {
+    wmctrlAvailable = !error;
+    if (wmctrlAvailable) {
+      console.log('Grok Desktop: wmctrl available for AOT fallback');
+    } else {
+      console.warn('Grok Desktop: wmctrl not available, AOT may not work on this system');
+      console.warn('Grok Desktop: Install wmctrl with: sudo dnf install wmctrl');
+    }
+  });
+}
+
+function forceX11Mode() {
+  console.log('Grok Desktop: Relaunching with X11 for AOT compatibility...');
+
+  // Relaunch with X11 forced to enable wmctrl functionality
+  const newArgs = [...process.argv.slice(1), '--ozone-platform=x11'];
+  app.relaunch({
+    args: newArgs,
+    env: { ...process.env, OZONE_PLATFORM: 'x11', ELECTRON_USE_X11: '1' }
+  });
+  app.exit(0);
+}
+
+// Fallback AOT toggle using wmctrl on Linux
+function toggleAlwaysOnTopLinux(mainWindow) {
+  if (!wmctrlAvailable) return false;
+
+  return new Promise((resolve) => {
+    // Get the window title to target it specifically
+    const windowTitle = mainWindow.getTitle() || 'Grok Desktop';
+
+    // First focus the window, then toggle always-on-top
+    const commands = [
+      `wmctrl -a "${windowTitle}"`,  // Focus/activate the window
+      `wmctrl -r "${windowTitle}" -b toggle,above`  // Toggle always-on-top
+    ];
+
+    exec(commands.join(' && '), (error) => {
+      if (error) {
+        console.warn('Grok Desktop: wmctrl AOT toggle failed:', error.message);
+        resolve(false);
+      } else {
+        console.log('Grok Desktop: AOT toggled via wmctrl');
+        resolve(true);
+      }
+    });
+  });
+}
+
 function createWindow() {
   // Create the browser window
   mainWindow = new BrowserWindow({
@@ -348,6 +425,7 @@ function createWindow() {
 
 // Create window when Electron has finished initialization
 app.whenReady().then(() => {
+  checkWmctrlAvailability();
   createWindow();
 
   app.on('activate', () => {
@@ -380,13 +458,29 @@ function setupUrlHandling() {
 // Set up IPC handlers for renderer-to-main process communication
 function setupIpcHandlers() {
   // Handle always-on-top toggle
-  ipcMain.handle('toggle-always-on-top', () => {
-    if (mainWindow) {
+  ipcMain.handle('toggle-always-on-top', async () => {
+    if (!mainWindow) return false;
+
+    // On Linux, use wmctrl if available for better GNOME compatibility
+    if (os.platform() === 'linux') {
+      if (wmctrlAvailable) {
+        const result = await toggleAlwaysOnTopLinux(mainWindow);
+        if (result) return true;
+      } else {
+        console.warn('Grok Desktop: wmctrl not available on Linux, AOT may not work');
+      }
+      // Fall back to Electron method if wmctrl fails or isn't available
+    }
+
+    // Use Electron's built-in method (works on Windows/macOS, may not work reliably on Linux GNOME/Wayland)
+    try {
       const isAlwaysOnTop = mainWindow.isAlwaysOnTop();
       mainWindow.setAlwaysOnTop(!isAlwaysOnTop);
       return !isAlwaysOnTop;
+    } catch (error) {
+      console.warn('Grok Desktop: Electron AOT toggle failed:', error.message);
+      return false;
     }
-    return false;
   });
 
   // Provide app version to renderer
