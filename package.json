@@ -9,7 +9,10 @@
     "pack": "npx --yes electron-builder@latest --dir",
     "build-portable": "npx --yes electron-builder@latest --win portable",
     "build-dir": "npx --yes electron-builder@latest --dir",
-    "build-installer": "npx --yes electron-builder@latest --win --x64"
+    "build-installer": "npx --yes electron-builder@latest --win --x64",
+    "build-linux": "npx --yes electron-builder@latest --linux",
+    "build-rhel": "npx --yes electron-builder@latest --linux rpm",
+    "build-all": "npx --yes electron-builder@latest --win --x64 --linux"
   },
   "keywords": [
     "electron",
@@ -17,14 +20,14 @@
     "desktop",
     "tabs"
   ],
-  "author": "AnRkey",
+  "author": "AnRkey <anrkey@gmail.com>",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
     "electron-tabs": "^1.0.4"
   },
   "devDependencies": {
-    "electron": "^39.1.1"
+    "electron": "^39.1.2"
   },
   "overrides": {
     "form-data": "4.0.4",
@@ -35,6 +38,25 @@
     "productName": "Grok Desktop",
     "directories": {
       "output": "build"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "rpm",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "category": "Network",
+      "icon": "build-resources/icons",
+      "artifactName": "Grok-Desktop-v${version}.${ext}"
     },
     "win": {
       "target": [
