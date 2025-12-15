@@ -492,77 +492,34 @@ function setupIpcHandlers() {
     }
   });
 
-  // Show About window with clickable GitHub link; adapts to OS theme
+  // Open About page in a new tab instead of a window
   ipcMain.handle('show-app-info', async () => {
     const name = typeof app.getName === 'function' ? app.getName() : 'Grok Desktop';
     const version = typeof app.getVersion === 'function' ? app.getVersion() : '0.0.0';
     const repoUrl = 'https://github.com/AnRkey/Grok-Desktop';
 
+    // Build the about page URL with parameters
+    const urlObj = new URL(`file://${path.join(__dirname, '../about.html')}`);
+    urlObj.searchParams.set('name', name);
+    urlObj.searchParams.set('version', version);
+    urlObj.searchParams.set('repo', repoUrl);
+
+    // Derive developer/contact from the GitHub repo URL
+    let developer = 'AnRkey';
     try {
-      if (aboutWindow && !aboutWindow.isDestroyed()) {
-        aboutWindow.focus();
-        return { name, version };
-      }
+      const m = repoUrl.match(/^https?:\/\/github\.com\/([^/]+)/i);
+      if (m && m[1]) developer = m[1];
+    } catch (_) {}
+    const contactUrl = 'https://github.com/AnRkey/Grok-Desktop/discussions';
+    urlObj.searchParams.set('developer', developer);
+    urlObj.searchParams.set('contact', contactUrl);
 
-      aboutWindow = new BrowserWindow({
-        width: 380,
-        height: 410,
-        resizable: false,
-        minimizable: false,
-        maximizable: false,
-        fullscreenable: false,
-        show: false,
-        center: true,
-        parent: mainWindow,
-        modal: true,
-        backgroundColor: nativeTheme.shouldUseDarkColors ? '#202124' : '#ffffff',
-        webPreferences: {
-          javascript: true,
-          nodeIntegration: false,
-          contextIsolation: true,
-          sandbox: true
-        }
-      });
-      aboutWindow.setMenuBarVisibility(false);
-
-      // Ensure external links open in system browser
-      aboutWindow.webContents.setWindowOpenHandler(({ url }) => {
-        try { shell.openExternal(url); } catch (_) {}
-        return { action: 'deny' };
-      });
-      aboutWindow.webContents.on('will-navigate', (event, url) => {
-        if (typeof url === 'string' && url.startsWith('http')) {
-          event.preventDefault();
-          try { shell.openExternal(url); } catch (_) {}
-        }
-      });
-
-      const urlObj = new URL(`file://${path.join(__dirname, '../about.html')}`);
-      urlObj.searchParams.set('name', name);
-      urlObj.searchParams.set('version', version);
-      urlObj.searchParams.set('repo', repoUrl);
-      // Derive developer/contact from the GitHub repo URL
-      let developer = 'AnRkey';
-      try {
-        const m = repoUrl.match(/^https?:\/\/github\.com\/([^/]+)/i);
-        if (m && m[1]) developer = m[1];
-      } catch (_) {}
-      const contactUrl = 'https://github.com/AnRkey/Grok-Desktop/discussions';
-      urlObj.searchParams.set('developer', developer);
-      urlObj.searchParams.set('contact', contactUrl);
-
-      await aboutWindow.loadURL(urlObj.toString());
-      aboutWindow.once('ready-to-show', () => aboutWindow && aboutWindow.show());
-      aboutWindow.on('closed', () => { aboutWindow = null; });
-
-      return { name, version };
-    } catch (_) {
-      if (aboutWindow && !aboutWindow.isDestroyed()) {
-        try { aboutWindow.close(); } catch (_) {}
-      }
-      aboutWindow = null;
-      return { name, version };
+    // Send the URL to the renderer to create a new tab
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('open-about-tab', urlObj.toString());
     }
+
+    return { name, version };
   });
 
   // Fetch Grok usage rate limits

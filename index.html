@@ -751,6 +751,36 @@
           // Update on scroll and resize
           this.scrollContainer.addEventListener('scroll', () => this.updateScrollButtons(), { passive: true });
           window.addEventListener('resize', () => this.updateScrollButtons());
+
+          // Add mouse wheel functionality when hovering over tabs
+          this.scrollContainer.addEventListener('wheel', (e) => {
+            // Only handle if we're over the tabs area (not scroll buttons)
+            if (e.target.closest('.tabs-scroll')) return;
+
+            // Check if Ctrl is pressed for tab switching
+            if (e.ctrlKey) {
+              // Ctrl + scroll = switch tabs
+              e.preventDefault(); // Prevent any default behavior
+              if (e.deltaY > 0) {
+                // Scroll down = next tab
+                this.activateNextTab();
+              } else if (e.deltaY < 0) {
+                // Scroll up = previous tab
+                this.activatePrevTab();
+              }
+            } else {
+              // Regular scroll = horizontal scrolling of tabs
+              const deltaX = e.deltaY * 0.5; // Scale down for smoother scrolling
+              this.scrollContainer.scrollBy({
+                left: deltaX,
+                behavior: 'auto' // Use 'auto' for immediate response to wheel
+              });
+
+              // Prevent default vertical scrolling when over tabs
+              e.preventDefault();
+            }
+          }, { passive: false });
+
           // Initial
           this.updateScrollButtons();
         }
@@ -843,7 +873,10 @@
         ipcRenderer.invoke('show-app-info');
       }
     });
-    
+    ipcRenderer.on('open-about-tab', (event, aboutUrl) => {
+      tabManager.createTab(aboutUrl);
+    });
+
     // Usage stats management
     const usageStats = {
       isActive: false,
