@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.grok.desktop</id>
+  <metadata_license>MIT</metadata_license>
+  <project_license>GPL-2.0</project_license>
+  <name>Grok Desktop</name>
+  <summary>Desktop application for Grok.com with tab support</summary>
+  <description>
+    <p>
+      Grok-Desktop is an Electron-based desktop application for Windows 10/11, Red Hat Enterprise Linux 9, and Rocky Linux 10 that wraps grok.com, allowing desktop-application-like access to Grok with support for xAI, Google, and Apple authentication.
+    </p>
+    <p>Features:</p>
+    <ul>
+      <li>Desktop application wrapper for grok.com</li>
+      <li>Tabs functionality for multiple Grok conversations</li>
+      <li>Keyboard shortcuts for faster workflow</li>
+      <li>Support for xAI, Google, and Apple authentication</li>
+      <li>Always-on-top function</li>
+      <li>Dark/Light mode support</li>
+      <li>Grok speech mode supported</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">grok-desktop.desktop</launchable>
+  <url type="homepage">https://github.com/AnRkey/Grok-Desktop</url>
+  <url type="bugtracker">https://github.com/AnRkey/Grok-Desktop/issues</url>
+  <developer_name>AnRkey</developer_name>
+  <screenshots>
+    <screenshot type="default">
+      <caption>Grok Desktop main interface</caption>
+      <image>https://raw.githubusercontent.com/AnRkey/Grok-Desktop/main/screenshot.png</image>
+    </screenshot>
+  </screenshots>
+  <categories>
+    <category>Network</category>
+    <category>Chat</category>
+    <category>Office</category>
+  </categories>
+  <keywords>
+    <keyword>grok</keyword>
+    <keyword>ai</keyword>
+    <keyword>chat</keyword>
+    <keyword>assistant</keyword>
+  </keywords>
+  <provides>
+    <binary>grok-desktop</binary>
+  </provides>
+  <releases>
+    <release version="1.2.3" date="2025-11-15">
+      <description>
+        <p>Added Linux support for RHEL 9 and Rocky Linux 10</p>
+      </description>
+    </release>
+  </releases>
+  <content_rating type="oars-1.1">
+    <content_attribute id="social-chat">intense</content_attribute>
+    <content_attribute id="social-info">moderate</content_attribute>
+  </content_rating>
+</component>
+

@@ -1,6 +1,6 @@
 {
   "name": "Grok-Desktop",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Grok-Desktop application for Grok.com with tab support",
   "main": "src/main.js",
   "scripts": {
@@ -9,7 +9,12 @@
     "pack": "npx --yes electron-builder@latest --dir",
     "build-portable": "npx --yes electron-builder@latest --win portable",
     "build-dir": "npx --yes electron-builder@latest --dir",
-    "build-installer": "npx --yes electron-builder@latest --win --x64"
+    "build-installer": "npx --yes electron-builder@latest --win --x64",
+    "build-linux": "npx --yes electron-builder@latest --linux",
+    "build-rpm": "npx --yes electron-builder@latest --linux rpm",
+    "build-deb": "npx --yes electron-builder@latest --linux deb",
+    "build-rpm-deb": "npx --yes electron-builder@latest --linux rpm deb",
+    "build-all": "npx --yes electron-builder@latest --win --x64 --linux"
   },
   "keywords": [
     "electron",
@@ -17,14 +22,14 @@
     "desktop",
     "tabs"
   ],
-  "author": "AnRkey",
+  "author": "AnRkey <anrkey@gmail.com>",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
     "electron-tabs": "^1.0.4"
   },
   "devDependencies": {
-    "electron": "^39.1.1"
+    "electron": "^39.1.2"
   },
   "overrides": {
     "form-data": "4.0.4",
@@ -36,26 +41,25 @@
     "directories": {
       "output": "build"
     },
+    "linux": {
+      "target": [
+        "rpm",
+        "deb"
+      ],
+      "category": "Network",
+      "icon": "build-resources/icons"
+    },
+    "rpm": {
+      "artifactName": "Grok-Desktop-v${version}.${ext}"
+    },
+    "deb": {
+      "artifactName": "Grok-Desktop-v${version}.${ext}"
+    },
     "win": {
       "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "msi",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "portable",
-          "arch": [
-            "x64"
-          ]
-        }
+        "nsis",
+        "msi",
+        "portable"
       ],
       "icon": "src/grok.png",
       "forceCodeSigning": false,

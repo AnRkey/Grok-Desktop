@@ -33,12 +33,17 @@
       background: var(--bg);
       color: var(--fg);
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Noto Sans", "Helvetica Neue", Arial, sans-serif;
+      height: 100vh;
+      width: 100vw;
     }
     .container {
-      padding: 16px 18px;
-      display: grid;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
       gap: 8px;
       text-align: center;
+      min-height: 100vh;
     }
     h1 {
       margin: 0;
@@ -133,9 +138,6 @@
           contactLink.setAttribute('target', '_blank');
           contactLink.setAttribute('rel', 'noopener');
         }
-        document.getElementById('closeBtn').addEventListener('click', function() {
-          window.close();
-        });
       });
     })();
   </script>
@@ -149,9 +151,6 @@
     <p class="small" id="developerLine">Developer: <a id="developerLink" href="#">AnRkey</a></p>
     <p><a id="repoLink" href="#">GitHub Repository</a></p>
     <p><a id="contactLink" href="#">Discussion Forums</a></p>
-    <div class="actions">
-      <button id="closeBtn" type="button">Close</button>
-    </div>
   </div>
   <!-- No external resources to keep it robust offline -->
   <!-- End -->

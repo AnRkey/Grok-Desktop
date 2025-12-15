@@ -71,11 +71,26 @@ temp/
 # Keep lockfiles tracked (do not ignore package-lock.json)
 
 # Task list
+<<<<<<< HEAD
 task-list.md
+=======
+tasklist.md
+>>>>>>> development
 
 # Security reports
 security_reports/
 
+<<<<<<< HEAD
 # Task lists
 tasklist.md
 
+=======
+# Regression test checklist
+REGRESSION_TEST_CHECKLIST.md
+
+# release notes for github
+release.md
+
+# copyparty
+copyparty_1.19.22.exe
+>>>>>>> development
