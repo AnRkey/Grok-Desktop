@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-The following vesion support matrix shows which versions of Grok-Desktop are currently being maintained.
+The following table shows which versions of Grok-Desktop are currently being maintained.
 
 | Version | Supported          |
 | ------- | ------------------ |
