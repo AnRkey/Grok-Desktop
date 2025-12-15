@@ -29,7 +29,18 @@ Grok-Desktop is an Electron-based desktop application for Windows 10/11 and Linu
 - **Enhanced security** with domain validation and OAuth protection
 
 ## Download
-[Download Grok-Desktop_Installer-v1.2.4.exe](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.4/Grok-Desktop_Installer-v1.2.4.exe)
+
+### Windows
+- [Grok-Desktop_Installer-v1.2.4.exe](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.4/Grok-Desktop_Installer-v1.2.4.exe) - Windows installer (EXE)
+- [Grok-Desktop_Installer-v1.2.4.msi](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.4/Grok-Desktop_Installer-v1.2.4.msi) - Windows installer (MSI)
+- [Grok-Desktop_Portable-v1.2.4.exe](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.4/Grok-Desktop_Portable-v1.2.4.exe) - Portable Windows executable
+- [Grok-Desktop_Windows-v1.2.4.zip](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.4/Grok-Desktop_Windows-v1.2.4.zip) - Windows ZIP archive
+
+### Linux
+- [Grok-Desktop-v1.2.4.deb](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.4/Grok-Desktop-v1.2.4.deb) - Debian/Ubuntu package
+- [Grok-Desktop-v1.2.4.rpm](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.4/Grok-Desktop-v1.2.4.rpm) - RPM package (RHEL/Rocky Linux/Fedora)
+- [Grok-Desktop_Linux-v1.2.4.tar.gz](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.4/Grok-Desktop_Linux-v1.2.4.tar.gz) - Linux tar.gz archive
+- [Grok-Desktop_Linux-v1.2.4.7z](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.4/Grok-Desktop_Linux-v1.2.4.7z) - Linux 7z archive
 
 ## System Requirements
 
