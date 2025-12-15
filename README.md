@@ -17,7 +17,7 @@ Grok-Desktop is an Electron-based desktop application for Windows 10/11 and Linu
 - **Keyboard shortcuts**:
   - `Ctrl+T`: Open a new tab
   - `Ctrl+Tab` / `Ctrl+Shift+Tab`: Cycle through open tabs (next/previous)
-  - `Mouse-wheel-scroll`: Scroll open tabs when they overflowing tab bar
+  - `Mouse-wheel-scroll`: Scroll open tabs when they are overflowing on the tab bar
   - `Ctrl+Mouse-wheel-scroll`: Cycle through open tabs (next/previous)
   - `Ctrl+R`: Reload the active tab
   - `Ctrl+I`: Show information/about dialog
