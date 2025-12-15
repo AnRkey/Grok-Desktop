@@ -11,7 +11,9 @@
     "build-dir": "npx --yes electron-builder@latest --dir",
     "build-installer": "npx --yes electron-builder@latest --win --x64",
     "build-linux": "npx --yes electron-builder@latest --linux",
-    "build-rhel": "npx --yes electron-builder@latest --linux rpm",
+    "build-rpm": "npx --yes electron-builder@latest --linux rpm",
+    "build-deb": "npx --yes electron-builder@latest --linux deb",
+    "build-rpm-deb": "npx --yes electron-builder@latest --linux rpm deb",
     "build-all": "npx --yes electron-builder@latest --win --x64 --linux"
   },
   "keywords": [
@@ -41,47 +43,26 @@
     },
     "linux": {
       "target": [
-        {
-          "target": "rpm",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "deb",
-          "arch": [
-            "x64"
-          ]
-        }
+        "rpm",
+        "deb"
       ],
       "category": "Network",
-      "icon": "build-resources/icons",
+      "icon": "build-resources/icons"
+    },
+    "rpm": {
+      "artifactName": "Grok-Desktop-v${version}.${ext}"
+    },
+    "deb": {
       "artifactName": "Grok-Desktop-v${version}.${ext}"
     },
     "win": {
       "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "msi",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "portable",
-          "arch": [
-            "x64"
-          ]
-        }
+        "nsis",
+        "msi",
+        "portable"
       ],
       "icon": "src/grok.png",
-      "forceCodeSigning": false,
-      "artifactName": "Grok-Desktop_Archive-v${version}.${ext}"
+      "forceCodeSigning": false
     },
     "nsis": {
       "oneClick": false,
