@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
 
+## [1.2.5] - 2025-12-17
+
+### Fixed
+- **Usage Stats 403 Error** - Fixed "Login required" error on Windows 11 by executing API fetch in webview context instead of main process
+  - Thanks to Joshua Wang (@JoshuaWang2211) for identifying the root cause and suggesting the solution
+  - API calls now run in the authenticated Grok tab context with proper session cookies and headers
+  - Resolves GitHub Issue #11
+
+### Changed
+- Bump version to 1.2.5
+
 ## [1.2.4] - 2025-12-14
 
 ### Security
@@ -87,12 +98,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ### Added
 - Initial pre-release of Grok Desktop
 
-<<<<<<< HEAD
- [Unreleased]: https://github.com/AnRkey/Grok-Desktop/compare/v1.2.3...HEAD
-=======
- [Unreleased]: https://github.com/AnRkey/Grok-Desktop/compare/v1.2.4...HEAD
+ [Unreleased]: https://github.com/AnRkey/Grok-Desktop/compare/v1.2.5...HEAD
+[1.2.5]: https://github.com/AnRkey/Grok-Desktop/releases/tag/v1.2.5
 [1.2.4]: https://github.com/AnRkey/Grok-Desktop/releases/tag/v1.2.4
->>>>>>> development
 [1.2.3]: https://github.com/AnRkey/Grok-Desktop/releases/tag/v1.2.3
 [1.2.2]: https://github.com/AnRkey/Grok-Desktop/releases/tag/v1.2.2
 [1.2.1]: https://github.com/AnRkey/Grok-Desktop/releases/tag/v1.2.1

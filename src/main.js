@@ -523,46 +523,64 @@ function setupIpcHandlers() {
   });
 
   // Fetch Grok usage rate limits
+  // Usage stats feature inspired by Joshua Wang's Grok Usage Watch extension
+  // https://github.com/JoshuaWang2211
+  // Fixed: Execute fetch inside the webview's context (where user is logged in)
+  // to avoid 403 errors from session.fetch() in main process
+  // Thanks to Joshua for identifying the root cause and suggesting this solution!
   ipcMain.handle('fetch-grok-rate-limits', async () => {
     try {
-      const grokSession = session.fromPartition('persist:grok');
-
-      // Helper function to fetch rate limits for a specific model
-      const fetchRateLimits = async (requestKind, modelName) => {
+      // Find the active Grok webview's webContents
+      const allContents = webContents.getAllWebContents();
+      const grokWebview = allContents.find(wc => {
         try {
-          // Use session.fetch which properly includes cookies
-          const response = await grokSession.fetch('https://grok.com/rest/rate-limits', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ requestKind, modelName })
-          });
-
-          if (response.status === 401 || response.status === 403) {
-            return { error: 'UNAUTHORIZED' };
-          }
-
-          if (!response.ok) {
-            return { error: `HTTP ${response.status}` };
-          }
-
-          return await response.json();
+          const url = wc.getURL();
+          return url.includes('grok.com') && !url.includes('about.html');
         } catch (e) {
-          return { error: e.message };
+          return false;
         }
-      };
-
-      // Fetch both default and grok-4-heavy limits in parallel
-      const [defaultLimits, grok4HeavyLimits] = await Promise.all([
-        fetchRateLimits('DEFAULT', 'grok-3'),
-        fetchRateLimits('DEFAULT', 'grok-4-heavy')
-      ]);
-
-      return {
-        DEFAULT: defaultLimits,
-        GROK4HEAVY: grok4HeavyLimits
-      };
+      });
+      
+      if (!grokWebview) {
+        return { error: 'No Grok tab found' };
+      }
+      
+      // Execute the fetch inside the webview's context where session cookies are available
+      const result = await grokWebview.executeJavaScript(`
+        (async () => {
+          const fetchRateLimits = async (requestKind, modelName) => {
+            try {
+              const response = await fetch('https://grok.com/rest/rate-limits', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ requestKind, modelName })
+              });
+              
+              if (response.status === 401 || response.status === 403) {
+                return { error: 'UNAUTHORIZED' };
+              }
+              if (!response.ok) {
+                return { error: \`HTTP \${response.status}\` };
+              }
+              return await response.json();
+            } catch (e) {
+              return { error: e.message };
+            }
+          };
+          
+          const [defaultLimits, grok4HeavyLimits] = await Promise.all([
+            fetchRateLimits('DEFAULT', 'grok-3'),
+            fetchRateLimits('DEFAULT', 'grok-4-heavy')
+          ]);
+          
+          return {
+            DEFAULT: defaultLimits,
+            GROK4HEAVY: grok4HeavyLimits
+          };
+        })()
+      `);
+      
+      return result;
     } catch (error) {
       return { error: error.message };
     }

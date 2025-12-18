@@ -6,7 +6,8 @@ The following table shows which versions of Grok-Desktop are currently being mai
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.2.4   | :white_check_mark: |
+| 1.2.5   | :white_check_mark: |
+| 1.2.4   | :x: |
 | 1.2.3   | :x: |
 | 1.2.2   | :x:                |
 | 1.2.1   | :x:                |

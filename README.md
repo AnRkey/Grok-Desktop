@@ -1,4 +1,4 @@
-# Grok-Desktop v1.2.4
+# Grok-Desktop v1.2.5
 
 ## Description
 Grok-Desktop is an Electron-based desktop application for Windows 10/11 and Linux that wraps `grok.com`, providing desktop-application-like access to Grok with real-time API usage monitoring, multi-tab support, and seamless authentication for xAI, Google, and Apple accounts.
@@ -31,16 +31,16 @@ Grok-Desktop is an Electron-based desktop application for Windows 10/11 and Linu
 ## Download
 
 ### Windows
-- [Grok-Desktop_Installer-v1.2.4.exe](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.4/Grok-Desktop_Installer-v1.2.4.exe) - Windows installer (EXE)
-- [Grok-Desktop_Installer-v1.2.4.msi](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.4/Grok-Desktop_Installer-v1.2.4.msi) - Windows installer (MSI)
-- [Grok-Desktop_Portable-v1.2.4.exe](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.4/Grok-Desktop_Portable-v1.2.4.exe) - Portable Windows executable
-- [Grok-Desktop_Windows-v1.2.4.zip](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.4/Grok-Desktop_Windows-v1.2.4.zip) - Windows ZIP archive
+- [Grok-Desktop_Installer-v1.2.5.exe](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.5/Grok-Desktop_Installer-v1.2.5.exe) - Windows installer (EXE)
+- [Grok-Desktop_Installer-v1.2.5.msi](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.5/Grok-Desktop_Installer-v1.2.5.msi) - Windows installer (MSI)
+- [Grok-Desktop_Portable-v1.2.5.exe](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.5/Grok-Desktop_Portable-v1.2.5.exe) - Portable Windows executable
+- [Grok-Desktop_Windows-v1.2.5.zip](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.5/Grok-Desktop_Windows-v1.2.5.zip) - Windows ZIP archive
 
 ### Linux
-- [Grok-Desktop-v1.2.4.deb](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.4/Grok-Desktop-v1.2.4.deb) - Debian/Ubuntu package
-- [Grok-Desktop-v1.2.4.rpm](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.4/Grok-Desktop-v1.2.4.rpm) - RPM package (RHEL/Rocky Linux/Fedora)
-- [Grok-Desktop_Linux-v1.2.4.tar.gz](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.4/Grok-Desktop_Linux-v1.2.4.tar.gz) - Linux tar.gz archive
-- [Grok-Desktop_Linux-v1.2.4.7z](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.4/Grok-Desktop_Linux-v1.2.4.7z) - Linux 7z archive
+- [Grok-Desktop-v1.2.5.deb](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.5/Grok-Desktop-v1.2.5.deb) - Debian/Ubuntu package
+- [Grok-Desktop-v1.2.5.rpm](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.5/Grok-Desktop-v1.2.5.rpm) - RPM package (RHEL/Rocky Linux/Fedora)
+- [Grok-Desktop_Linux-v1.2.5.tar.gz](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.5/Grok-Desktop_Linux-v1.2.5.tar.gz) - Linux tar.gz archive
+- [Grok-Desktop_Linux-v1.2.5.7z](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.5/Grok-Desktop_Linux-v1.2.5.7z) - Linux 7z archive
 
 ## System Requirements
 
@@ -163,7 +163,7 @@ npm run build-all
 ## Installation
 
 ### Windows
-1. Download and run `Grok-Desktop_Installer-v1.2.4.exe` from the releases page
+1. Download and run `Grok-Desktop_Installer-v1.2.5.exe` from the releases page
 2. Follow the installation wizard
 3. Launch "Grok Desktop" from the Start Menu
 
@@ -172,14 +172,7 @@ npm run build-all
 #### RPM Package (Recommended for RHEL/Rocky Linux)
 ```bash
 cd build
-sudo dnf install ./Grok-Desktop-v1.2.4.x86_64.rpm
-```
-
-#### AppImage (Universal Linux)
-```bash
-cd build
-chmod +x Grok-Desktop-v1.2.4.x86_64.AppImage
-./Grok-Desktop-v1.2.4.x86_64.AppImage
+sudo dnf install ./Grok-Desktop-v1.2.5.x86_64.rpm
 ```
 
 ## Usage Guide
@@ -221,6 +214,8 @@ When enabled (click the **s** button), a status bar appears at the bottom showin
 - **Persistent settings**: Remembers your display preferences
 - **Toggle controls**: Hide/show specific statistics as needed
 - **Login detection**: Shows "Login required" when not authenticated
+
+Thanks to Joshua Wang for his code.
 
 ### Keyboard Shortcuts
 | Shortcut | Action |
@@ -354,26 +349,23 @@ sudo dnf install wmctrl    # Rocky Linux/RHEL/Fedora
 sudo apt install wmctrl    # Ubuntu/Debian
 ```
 
-### Recent Changes (v1.2.4)
-- **API Usage Monitoring**: Added real-time tracking of Grok usage limits with visual indicators
-- **Security**: Enhanced domain validation and OAuth protection
-- **Linux**: Improved AOT support for Rocky Linux 10 and GNOME 49
-- **Wayland**: Automatic X11 fallback for Wayland compatibility
-- **Build**: Updated Electron to v39.x with security patches
-- **UI**: Better dark/light mode support and Grok speech mode integration
+### Recent Changes (v1.2.5)
+- **Bug Fix**: Fixed Usage Stats "Login required" error on Windows 11 (Issue #11)
+  - API calls now execute in webview context with proper authentication
+  - Thanks to Joshua Wang for identifying the root cause
+- **Previous (v1.2.4)**: API Usage Monitoring, enhanced security, improved Linux AOT support
 
 For complete changelog, see [CHANGELOG.md](CHANGELOG.md).
 
 ## Changelog Summary
 
-### v1.2.4 (Latest)
-- 📊 **API Usage Monitoring**: Real-time tracking of Grok usage limits (Low Effort, High Effort, Grok-4-Heavy)
-- 🔒 **Security**: Domain bypass protection, enhanced OAuth validation
-- 🐧 **Linux**: Fixed AOT on Rocky Linux 10/GNOME 49 with Wayland support
-- 🎨 **UI**: Improved dark/light mode and speech mode support
-- 📦 **Build**: Updated Electron to v39.x, enhanced build scripts
+### v1.2.5 (Latest)
+- 🐛 **Bug Fix**: Fixed Usage Stats "Login required" error on Windows 11
+  - Resolved 403 API errors by executing fetch in authenticated webview context
+  - Thanks to Joshua Wang (@JoshuaWang2211) for the bug report and solution
 
 ### Recent Versions
+- **v1.2.4**: API Usage Monitoring, enhanced security, improved Linux AOT
 - **v1.2.3**: Reload button, MSI installer, build improvements
 - **v1.2.2**: Electron security update (CVE-2025-55305)
 - **v1.2.1**: Better dark mode, voice mode support
@@ -417,4 +409,4 @@ The `grok.ico` application icon was sourced online and converted for use in this
 
 ---
 
-**Grok-Desktop v1.2.4** - Making Grok accessible everywhere! 🚀
+**Grok-Desktop v1.2.5** - Making Grok accessible everywhere! 🚀
