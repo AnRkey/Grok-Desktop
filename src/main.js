@@ -763,6 +763,30 @@ function attachShortcutHandlers(contents) {
         const win = BrowserWindow.fromWebContents(host);
         if (!win || win.isDestroyed()) return;
 
+        // Ctrl+K -> Remap to Ctrl+Shift+K for grok.com search
+        // grok.com responds to Ctrl+Shift+K, not Ctrl+K (which Chromium intercepts for omnibox)
+        if ((key === 'k' || key === 'K') && !input.shift) {
+          event.preventDefault();
+          // Send Ctrl+Shift+K to the webContents using sendInputEvent (creates trusted OS-level events)
+          contents.sendInputEvent({
+            type: 'keyDown',
+            keyCode: 'K',
+            modifiers: ['control', 'shift']
+          });
+          // Send keyUp after a short delay
+          setTimeout(() => {
+            try {
+              contents.sendInputEvent({
+                type: 'keyUp',
+                keyCode: 'K',
+                modifiers: ['control', 'shift']
+              });
+            } catch (_) {}
+          }, 10);
+          return;
+        }
+        // Don't intercept Ctrl+Shift+K - let it pass through naturally (it already works)
+
         // Ctrl+T -> new tab
         if (key === 't' || key === 'T') {
           event.preventDefault();
