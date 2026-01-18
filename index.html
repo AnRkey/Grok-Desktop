@@ -808,13 +808,21 @@
             activeTab.view.classList.remove('active');
           }
         }
-        
+
         // Activate new tab
         const tab = this.tabs.find(tab => tab.id === tabId);
         if (tab) {
           tab.element.classList.add('active');
           tab.view.classList.add('active');
           this.activeTabId = tabId;
+
+          // Focus the webview so keyboard shortcuts work immediately
+          // Use setTimeout to ensure DOM updates are complete
+          setTimeout(() => {
+            if (tab.webview && typeof tab.webview.focus === 'function') {
+              tab.webview.focus();
+            }
+          }, 0);
         }
       },
       

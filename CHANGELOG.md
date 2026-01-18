@@ -50,6 +50,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ## [Unreleased]
 
 ### Added
+- **macOS Support**: Added build scripts and configuration for macOS (Intel and Apple Silicon)
+  - `npm run build-mac-universal`: Universal binary for both Intel and Apple Silicon Macs
+  - `npm run build-mac-arm64`: Apple Silicon only builds
+  - `npm run build-mac-x64`: Intel Mac only builds
+  - `npm run build-mac`: Both architectures separately
 - Keyboard shortcuts in the app:
   - Ctrl+T: open new tab
   - Ctrl+Tab / Ctrl+Shift+Tab: cycle through open tabs (next/previous)

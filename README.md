@@ -1,7 +1,7 @@
 # Grok-Desktop v1.2.5
 
 ## Description
-Grok-Desktop is an Electron-based desktop application for Windows 10/11 and Linux that wraps `grok.com`, providing desktop-application-like access to Grok with real-time API usage monitoring, multi-tab support, and seamless authentication for xAI, Google, and Apple accounts.
+Grok-Desktop is an Electron-based desktop application for Windows 10/11, Linux, and macOS that wraps `grok.com`, providing desktop-application-like access to Grok with real-time API usage monitoring, multi-tab support, and seamless authentication for xAI, Google, and Apple accounts.
 
 ## Screenshot
 ![Screenshot](screenshot.png)
@@ -23,7 +23,7 @@ Grok-Desktop is an Electron-based desktop application for Windows 10/11 and Linu
   - `Ctrl+I`: Show information/about dialog
 - **Authentication support** for xAI, Google, and Apple accounts
 - **Clean interface** with no menu bar for distraction-free usage
-- **Always-on-top function** with cross-platform support (Windows & Linux)
+- **Always-on-top function** with cross-platform support (Windows, Linux & macOS)
 - **Dark/Light mode support** with system theme detection
 - **Grok speech mode** support
 - **Enhanced security** with domain validation and OAuth protection
@@ -42,10 +42,14 @@ Grok-Desktop is an Electron-based desktop application for Windows 10/11 and Linu
 - [Grok-Desktop_Linux-v1.2.5.tar.gz](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.5/Grok-Desktop_Linux-v1.2.5.tar.gz) - Linux tar.gz archive
 - [Grok-Desktop_Linux-v1.2.5.7z](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.5/Grok-Desktop_Linux-v1.2.5.7z) - Linux 7z archive
 
+### macOS
+- [Grok-Desktop-1.2.5.dmg](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.5/Grok-Desktop-1.2.5.dmg) - macOS installer (Universal - works on both Intel and Apple Silicon)
+- [Grok-Desktop-1.2.5-mac.zip](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.5/Grok-Desktop-1.2.5-mac.zip) - macOS ZIP archive (Universal)
+
 ## System Requirements
 
 ### For Using the Application
-- **Operating System**: Windows 10/11 or Linux (Rocky Linux 9/10, RHEL 9, Ubuntu, Fedora, etc.)
+- **Operating System**: Windows 10/11, Linux (Rocky Linux 9/10, RHEL 9, Ubuntu, Fedora, etc.), or macOS 10.14+
 - **Internet connection** for accessing grok.com
 - **Grok account** (sign up in-app or use Google/Apple/xAI authentication)
 - **Linux AOT (Always-on-Top) requirement**: Install `wmctrl` for Always-on-Top functionality:
@@ -53,7 +57,7 @@ Grok-Desktop is an Electron-based desktop application for Windows 10/11 and Linu
   - Ubuntu/Debian: `sudo apt install wmctrl`
 
 ### For Building from Source
-- **Operating System**: Windows 10/11 or Linux
+- **Operating System**: Windows 10/11, Linux, or macOS 10.14+
 - **Node.js**: LTS version (20.x recommended)
 - **Internet connection** for downloading dependencies
 
@@ -80,46 +84,12 @@ Grok-Desktop/
 ├── about.html            # About dialog HTML
 ├── package.json          # Node.js dependencies and build config
 ├── build.bat             # Windows build script
-├── build-linux.sh        # Linux build script
 ├── CHANGELOG.md          # Version history and changes
 ├── LINUX_BUILD_GUIDE.md  # Detailed Linux build instructions
 ├── new_features.md       # Security features documentation
 └── README.md            # This file
 ```
 
-<<<<<<< HEAD
-## Build Grok-Desktop
-1. Install Node.js from [nodejs.org](https://nodejs.org/).
-2. Clone this repository or download the files.
-3. Install dependencies if needed: `npm install`
-4. Build using npm scripts:
-   - Directory build (unpacked): `npm run build-dir`
-   - Portable executable: `npm run build-portable`
-   - Full installers (NSIS + MSI): `npm run build-installer`
-
-Notes:
-- These scripts use `npx electron-builder@latest` (no global install required).
-- All build outputs are written to the `build` directory.
-
-## Usage
-- After building, install `Grok-Desktop` with `Grok-Desktop_Installer-v1.2.3.exe` from the `build` directory
-- Launch `Grok-Desktop` from the Start Menu
-- Log in via `grok.com`, using Google, Apple, or xAI authentication as needed.
-- Use the + button in the top toolbar (or Ctrl+T) to add new tabs.
-- Click the AOT button in the top right to toggle always-on-top functionality.
-- Use keyboard shortcuts to work faster:
-  - Ctrl+T: Open a new tab
-  - Ctrl+Tab / Ctrl+Shift+Tab: Cycle through open tabs (next/previous)
-  - Ctrl+R: Reload the currently active tab
-  - Ctrl+I: Show information/about dialog
-
-## Keyboard Shortcuts
-- Ctrl+T: Open a new tab
-- Ctrl+Tab: Switch to the next tab
-- Ctrl+Shift+Tab: Switch to the previous tab
-- Ctrl+R: Reload the active tab (does not reload the entire app window)
-- Ctrl+I: Show information/about dialog
-=======
 ## Building from Source
 
 ### Prerequisites
@@ -155,6 +125,21 @@ npm run build-rhel
 npm run build-all
 ```
 
+#### macOS
+```bash
+# Universal binary (recommended - works on both Intel and Apple Silicon)
+npm run build-mac-universal
+
+# Apple Silicon only
+npm run build-mac-arm64
+
+# Intel Macs only
+npm run build-mac-x64
+
+# Both architectures separately
+npm run build-mac
+```
+
 **Notes:**
 - All scripts use `npx electron-builder@latest` (no global installation required)
 - Build outputs are written to the `build/` directory
@@ -174,6 +159,12 @@ npm run build-all
 cd build
 sudo dnf install ./Grok-Desktop-v1.2.5.x86_64.rpm
 ```
+
+### macOS
+1. Download `Grok-Desktop-1.2.5.dmg` from the releases page
+2. Open the downloaded `.dmg` file
+3. Drag "Grok Desktop" to your Applications folder
+4. Launch "Grok Desktop" from your Applications folder or Launchpad
 
 ## Usage Guide
 

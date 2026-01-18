@@ -14,7 +14,11 @@
     "build-rpm": "npx --yes electron-builder@latest --linux rpm",
     "build-deb": "npx --yes electron-builder@latest --linux deb",
     "build-rpm-deb": "npx --yes electron-builder@latest --linux rpm deb",
-    "build-all": "npx --yes electron-builder@latest --win --x64 --linux"
+    "build-all": "npx --yes electron-builder@latest --win --x64 --linux",
+    "build-mac": "npx --yes electron-builder@latest --mac",
+    "build-mac-arm64": "npx --yes electron-builder@latest --mac --arm64",
+    "build-mac-x64": "npx --yes electron-builder@latest --mac --x64",
+    "build-mac-universal": "npx --yes electron-builder@latest --mac --universal"
   },
   "keywords": [
     "electron",
@@ -78,6 +82,20 @@
     },
     "portable": {
       "artifactName": "Grok-Desktop_Portable-v${version}.exe"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64", "arm64", "universal"]
+        }
+      ],
+      "category": "Productivity",
+      "icon": "build-resources/icons/icon.icns"
     },
     "compression": "maximum",
     "asar": true,
