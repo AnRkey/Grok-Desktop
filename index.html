@@ -674,7 +674,14 @@
         };
 
         // Open links that request a new window
-        webview.addEventListener('new-window', (e) => { e.preventDefault(); handleOpenUrl(e.url); });
+        webview.addEventListener('new-window', (e) => {
+          // Let OAuth popups open as real BrowserWindows (handled by main process)
+          if (/accounts\.google\.com|appleid\.apple\.com/.test(e.url)) {
+            return; // Don't prevent — popup opens naturally with shared session
+          }
+          e.preventDefault();
+          handleOpenUrl(e.url);
+        });
         // Allow internal same-tab nav; open external in browser
         webview.addEventListener('will-navigate', (e) => {
           const url = e.url;

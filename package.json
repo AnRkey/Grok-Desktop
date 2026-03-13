@@ -14,7 +14,8 @@
     "build-rpm": "npx --yes electron-builder@latest --linux rpm",
     "build-deb": "npx --yes electron-builder@latest --linux deb",
     "build-rpm-deb": "npx --yes electron-builder@latest --linux rpm deb",
-    "build-all": "npx --yes electron-builder@latest --win --x64 --linux"
+    "build-all": "npx --yes electron-builder@latest --win --x64 --linux",
+    "build-mac": "npx --yes electron-builder@latest --mac"
   },
   "keywords": [
     "electron",
@@ -23,7 +24,7 @@
     "tabs"
   ],
   "author": "AnRkey <anrkey@gmail.com>",
-  "license": "ISC",
+  "license": "GPL-2.0",
   "type": "commonjs",
   "dependencies": {
     "electron-tabs": "^1.0.4"
@@ -48,6 +49,14 @@
       ],
       "category": "Network",
       "icon": "build-resources/icons"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.productivity",
+      "icon": "build-resources/icons/512x512.png",
+      "artifactName": "Grok-Desktop-v${version}.dmg"
     },
     "rpm": {
       "artifactName": "Grok-Desktop-v${version}.${ext}"

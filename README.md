@@ -87,39 +87,6 @@ Grok-Desktop/
 └── README.md            # This file
 ```
 
-<<<<<<< HEAD
-## Build Grok-Desktop
-1. Install Node.js from [nodejs.org](https://nodejs.org/).
-2. Clone this repository or download the files.
-3. Install dependencies if needed: `npm install`
-4. Build using npm scripts:
-   - Directory build (unpacked): `npm run build-dir`
-   - Portable executable: `npm run build-portable`
-   - Full installers (NSIS + MSI): `npm run build-installer`
-
-Notes:
-- These scripts use `npx electron-builder@latest` (no global install required).
-- All build outputs are written to the `build` directory.
-
-## Usage
-- After building, install `Grok-Desktop` with `Grok-Desktop_Installer-v1.2.3.exe` from the `build` directory
-- Launch `Grok-Desktop` from the Start Menu
-- Log in via `grok.com`, using Google, Apple, or xAI authentication as needed.
-- Use the + button in the top toolbar (or Ctrl+T) to add new tabs.
-- Click the AOT button in the top right to toggle always-on-top functionality.
-- Use keyboard shortcuts to work faster:
-  - Ctrl+T: Open a new tab
-  - Ctrl+Tab / Ctrl+Shift+Tab: Cycle through open tabs (next/previous)
-  - Ctrl+R: Reload the currently active tab
-  - Ctrl+I: Show information/about dialog
-
-## Keyboard Shortcuts
-- Ctrl+T: Open a new tab
-- Ctrl+Tab: Switch to the next tab
-- Ctrl+Shift+Tab: Switch to the previous tab
-- Ctrl+R: Reload the active tab (does not reload the entire app window)
-- Ctrl+I: Show information/about dialog
-=======
 ## Building from Source
 
 ### Prerequisites
@@ -129,7 +96,6 @@ Notes:
 4. Install dependencies: `npm install`
 
 ### Build Commands
->>>>>>> development
 
 #### Windows
 ```bash

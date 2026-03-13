@@ -7,17 +7,22 @@ const { exec } = require('child_process');
 // GPU acceleration detection and graceful fallback
 function configureGpuAcceleration() {
   // Check if we're in a headless environment or container
-  const isHeadless = !process.env.DISPLAY && !process.env.WAYLAND_DISPLAY;
+  // macOS and Windows don't use DISPLAY/WAYLAND_DISPLAY — only check on Linux
+  const isHeadless = process.platform === 'linux' && !process.env.DISPLAY && !process.env.WAYLAND_DISPLAY;
   const isContainer = fs.existsSync('/.dockerenv') || process.env.container === 'docker';
 
-  // Check for NVIDIA/AMD GPU availability (basic detection)
+  // Check for GPU availability (platform-aware detection)
   let hasGpu = false;
   try {
-    // Check for NVIDIA GPU
+    // macOS always has a GPU (Metal/integrated graphics) — never disable acceleration
+    if (process.platform === 'darwin') {
+      hasGpu = true;
+    }
+    // Check for NVIDIA GPU (Linux/Windows)
     if (fs.existsSync('/dev/nvidia0') || process.env.NVIDIA_VISIBLE_DEVICES) {
       hasGpu = true;
     }
-    // Check for AMD GPU
+    // Check for AMD/Intel GPU (Linux)
     if (fs.existsSync('/dev/dri/card0')) {
       hasGpu = true;
     }
@@ -346,6 +351,15 @@ function createWindow() {
       if (typeof grokSession.setSpellCheckerLanguages === 'function') {
         grokSession.setSpellCheckerLanguages(languages);
       }
+
+      // Override User-Agent to match a real Chrome browser so login/OAuth flows work.
+      // Electron's default UA includes "Electron" which many auth providers reject.
+      const chromeVersion = process.versions.chrome || '131.0.0.0';
+      const platform = process.platform === 'darwin' ? 'Macintosh; Intel Mac OS X 10_15_7'
+        : process.platform === 'win32' ? 'Windows NT 10.0; Win64; x64'
+        : 'X11; Linux x86_64';
+      const chromeUA = `Mozilla/5.0 (${platform}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion} Safari/537.36`;
+      grokSession.setUserAgent(chromeUA);
     }
   } catch (_) {}
 
@@ -443,14 +457,47 @@ app.on('window-all-closed', () => {
 function setupUrlHandling() {
   // Handle navigation events from webContents
   app.on('web-contents-created', (event, contents) => {
-    // Intercept new window requests; always deny BrowserWindow creation
-    // Internal domains will be handled by the renderer's webview 'new-window' handler
     contents.setWindowOpenHandler(({ url }) => {
       const isInternal = allowedUrlPatterns.some(pattern => pattern.test(url));
       if (!isInternal) {
         shell.openExternal(url);
+        return { action: 'deny' };
       }
+
+      // Allow OAuth popups to open as real BrowserWindows so login flows work.
+      // Google/Apple OAuth require a proper popup with window.opener context.
+      const isOAuth = /^https?:\/\/(accounts\.google\.com|appleid\.apple\.com)/i.test(url);
+      if (isOAuth) {
+        return {
+          action: 'allow',
+          overrideBrowserWindowOptions: {
+            width: 500,
+            height: 700,
+            webPreferences: {
+              partition: 'persist:grok',
+              nodeIntegration: false,
+              contextIsolation: true
+            }
+          }
+        };
+      }
+
+      // Other internal URLs are handled by the renderer's webview new-window handler
       return { action: 'deny' };
+    });
+
+    // Manage OAuth popup lifecycle — close when auth redirects back to grok.com
+    contents.on('did-create-window', (popup) => {
+      popup.webContents.on('did-navigate', (_e, navUrl) => {
+        if (/^https?:\/\/grok\.com/i.test(navUrl)) {
+          popup.close();
+        }
+      });
+      popup.webContents.on('will-redirect', (_e, navUrl) => {
+        if (/^https?:\/\/grok\.com/i.test(navUrl)) {
+          popup.close();
+        }
+      });
     });
   });
 }
@@ -754,8 +801,9 @@ function attachShortcutHandlers(contents) {
   try {
     contents.on('before-input-event', (event, input) => {
       try {
-        // Only handle keyDown with Control on Windows/Linux
-        if (input.type !== 'keyDown' || !input.control) return;
+        // Handle keyDown with Control (Windows/Linux) or Meta/Cmd (macOS)
+        const modifier = process.platform === 'darwin' ? input.meta : input.control;
+        if (input.type !== 'keyDown' || !modifier) return;
 
         const key = input.key;
         // Deliver to the hosting window (handles webviews as well)
@@ -763,29 +811,28 @@ function attachShortcutHandlers(contents) {
         const win = BrowserWindow.fromWebContents(host);
         if (!win || win.isDestroyed()) return;
 
-        // Ctrl+K -> Remap to Ctrl+Shift+K for grok.com search
+        // Cmd/Ctrl+K -> Remap to Cmd/Ctrl+Shift+K for grok.com search
         // grok.com responds to Ctrl+Shift+K, not Ctrl+K (which Chromium intercepts for omnibox)
+        const modKey = process.platform === 'darwin' ? 'meta' : 'control';
         if ((key === 'k' || key === 'K') && !input.shift) {
           event.preventDefault();
-          // Send Ctrl+Shift+K to the webContents using sendInputEvent (creates trusted OS-level events)
           contents.sendInputEvent({
             type: 'keyDown',
             keyCode: 'K',
-            modifiers: ['control', 'shift']
+            modifiers: [modKey, 'shift']
           });
-          // Send keyUp after a short delay
           setTimeout(() => {
             try {
               contents.sendInputEvent({
                 type: 'keyUp',
                 keyCode: 'K',
-                modifiers: ['control', 'shift']
+                modifiers: [modKey, 'shift']
               });
             } catch (_) {}
           }, 10);
           return;
         }
-        // Don't intercept Ctrl+Shift+K - let it pass through naturally (it already works)
+        // Don't intercept Cmd/Ctrl+Shift+K - let it pass through naturally (it already works)
 
         // Ctrl+T -> new tab
         if (key === 't' || key === 'T') {
