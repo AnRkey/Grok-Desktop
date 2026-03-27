@@ -5,16 +5,19 @@
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
-    "build": "npx --yes electron-builder@latest --win --x64",
-    "pack": "npx --yes electron-builder@latest --dir",
-    "build-portable": "npx --yes electron-builder@latest --win portable",
-    "build-dir": "npx --yes electron-builder@latest --dir",
-    "build-installer": "npx --yes electron-builder@latest --win --x64",
-    "build-linux": "npx --yes electron-builder@latest --linux",
-    "build-rpm": "npx --yes electron-builder@latest --linux rpm",
-    "build-deb": "npx --yes electron-builder@latest --linux deb",
-    "build-rpm-deb": "npx --yes electron-builder@latest --linux rpm deb",
-    "build-all": "npx --yes electron-builder@latest --win --x64 --linux"
+    "build": "npx --yes electron-builder@24.13.3 --win --x64 --publish never",
+    "pack": "npx --yes electron-builder@24.13.3 --dir",
+    "build-portable": "npx --yes electron-builder@24.13.3 --win portable --publish never",
+    "build-dir": "npx --yes electron-builder@24.13.3 --dir",
+    "build-installer": "npx --yes electron-builder@24.13.3 --win --x64 --publish never",
+    "build-linux": "npx --yes electron-builder@24.13.3 --linux --publish never",
+    "build-rpm": "npx --yes electron-builder@24.13.3 --linux rpm --publish never",
+    "build-deb": "npx --yes electron-builder@24.13.3 --linux deb --publish never",
+    "build-rpm-deb": "npx --yes electron-builder@24.13.3 --linux rpm deb --publish never",
+    "build-mac": "npx --yes electron-builder@24.13.3 --mac --publish never",
+    "build-mac-arm64": "npx --yes electron-builder@24.13.3 --mac --arm64 --publish never",
+    "build-mac-universal": "npx --yes electron-builder@24.13.3 --mac --universal --publish never",
+    "build-all": "npx --yes electron-builder@24.13.3 --win --x64 --linux --mac --publish never"
   },
   "keywords": [
     "electron",
@@ -29,7 +32,7 @@
     "electron-tabs": "^1.0.4"
   },
   "devDependencies": {
-    "electron": "^39.1.2"
+    "electron": "^41.1.0"
   },
   "overrides": {
     "form-data": "4.0.4",
@@ -48,6 +51,15 @@
       ],
       "category": "Network",
       "icon": "build-resources/icons"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "build-resources/grok.icns",
+      "category": "public.app-category.productivity",
+      "artifactName": "Grok-Desktop_Mac-v${version}-${arch}.${ext}"
     },
     "rpm": {
       "artifactName": "Grok-Desktop-v${version}.${ext}"
