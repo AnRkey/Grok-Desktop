@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [1.3.0] - 2026-06-06
+
+This release marks the **Grok Desktop Universal** fork of AnRkey/Grok-Desktop.
+
+### Added
+
+- **macOS support** (Apple Silicon / arm64) with a native `.icns` icon and DMG/ZIP packaging
+- **Browser-style tearable tabs** - drag a tab out of the window to create a separate window
+- **Multi-window support** - drag tabs back onto another window's tab strip to merge them
+- **Multi-select tabs** - `Cmd/Ctrl`-click and `Shift`-click to drag multiple tabs at once
+- **Cross-platform CI** - GitHub Actions workflow that builds and publishes macOS, Windows, and Linux release artifacts on `v*` tags
+
+### Changed
+
+- Rebranded to `grok-desktop-universal` (product name "Grok Desktop Universal")
+- Bump version to 1.3.0
 
 ## [1.2.4] - 2025-12-14
 

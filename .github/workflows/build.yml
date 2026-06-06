@@ -1,0 +1,76 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [ main, development ]
+    tags: [ "v*" ]
+  pull_request:
+    branches: [ main, development ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.platform }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            platform: mac
+            builder_args: "--mac --arm64"
+          - os: windows-latest
+            platform: windows
+            builder_args: "--win --x64"
+          - os: ubuntu-latest
+            platform: linux
+            builder_args: "--linux deb AppImage"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build ${{ matrix.platform }} artifacts
+        run: npx --yes electron-builder@24.13.3 ${{ matrix.builder_args }} --publish never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: grok-desktop-universal-${{ matrix.platform }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            build/*.dmg
+            build/*.zip
+            build/*.exe
+            build/*.msi
+            build/*.deb
+            build/*.AppImage
+            build/*.rpm
+
+      - name: Publish to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            build/*.dmg
+            build/*.zip
+            build/*.exe
+            build/*.msi
+            build/*.deb
+            build/*.AppImage
+            build/*.rpm

@@ -1,7 +1,7 @@
 {
-  "name": "Grok-Desktop",
-  "version": "1.2.4",
-  "description": "Grok-Desktop application for Grok.com with tab support",
+  "name": "grok-desktop-universal",
+  "version": "1.3.0",
+  "description": "Cross-platform (macOS, Windows, Linux) Grok desktop app with browser-style tearable tabs and multi-window support. A fork of AnRkey/Grok-Desktop.",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
@@ -23,9 +23,20 @@
     "electron",
     "grok",
     "desktop",
-    "tabs"
+    "tabs",
+    "macos",
+    "windows",
+    "linux",
+    "cross-platform"
   ],
   "author": "AnRkey <anrkey@gmail.com>",
+  "contributors": [
+    "perlytiara (macOS port, cross-platform CI, tearable multi-window tabs)"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/perlytiara/Grok-Desktop-Universal.git"
+  },
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
@@ -39,8 +50,8 @@
     "tmp": "latest"
   },
   "build": {
-    "appId": "com.grok.desktop",
-    "productName": "Grok Desktop",
+    "appId": "com.grokdesktop.universal",
+    "productName": "Grok Desktop Universal",
     "directories": {
       "output": "build"
     },
@@ -59,13 +70,13 @@
       ],
       "icon": "build-resources/grok.icns",
       "category": "public.app-category.productivity",
-      "artifactName": "Grok-Desktop_Mac-v${version}-${arch}.${ext}"
+      "artifactName": "Grok-Desktop-Universal_Mac-v${version}-${arch}.${ext}"
     },
     "rpm": {
-      "artifactName": "Grok-Desktop-v${version}.${ext}"
+      "artifactName": "Grok-Desktop-Universal-v${version}.${ext}"
     },
     "deb": {
-      "artifactName": "Grok-Desktop-v${version}.${ext}"
+      "artifactName": "Grok-Desktop-Universal-v${version}.${ext}"
     },
     "win": {
       "target": [
@@ -81,14 +92,14 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Grok Desktop",
-      "artifactName": "Grok-Desktop_Installer-v${version}.exe"
+      "shortcutName": "Grok Desktop Universal",
+      "artifactName": "Grok-Desktop-Universal_Installer-v${version}.exe"
     },
     "msi": {
-      "artifactName": "Grok-Desktop_Installer-v${version}.msi"
+      "artifactName": "Grok-Desktop-Universal_Installer-v${version}.msi"
     },
     "portable": {
-      "artifactName": "Grok-Desktop_Portable-v${version}.exe"
+      "artifactName": "Grok-Desktop-Universal_Portable-v${version}.exe"
     },
     "compression": "maximum",
     "asar": true,
