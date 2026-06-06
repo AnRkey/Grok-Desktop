@@ -1,10 +1,10 @@
-# Grok Desktop Universal v1.3.0
+# Grok v1.3.1
 
-> A cross-platform fork of [AnRkey/Grok-Desktop](https://github.com/AnRkey/Grok-Desktop) that adds native **macOS** builds and **browser-style tearable tabs** with multi-window support.
+> A cross-platform fork of [AnRkey/Grok-Desktop](https://github.com/AnRkey/Grok-Desktop) with native **macOS** builds and **browser-style tearable tabs**.
 
 ## Description
 
-Grok Desktop Universal is an Electron-based desktop application for **macOS, Windows 10/11, and Linux** that wraps `grok.com`, providing desktop-application-like access to Grok with real-time API usage monitoring, multi-tab support, and seamless authentication for xAI, Google, and Apple accounts.
+Grok is an Electron-based desktop application for **macOS, Windows 10/11, and Linux** that wraps `grok.com`, providing desktop-application-like access to Grok with real-time API usage monitoring, multi-tab support, and seamless authentication for xAI, Google, and Apple accounts.
 
 ## Screenshot
 
@@ -44,9 +44,9 @@ Grok Desktop Universal is an Electron-based desktop application for **macOS, Win
 
 Pre-built installers for macOS, Windows, and Linux are published automatically on the [Releases page](https://github.com/perlytiara/Grok-Desktop-Universal/releases) of this fork.
 
-- **macOS (Apple Silicon)**: `Grok-Desktop-Universal_Mac-v1.3.0-arm64.dmg`
-- **Windows**: `Grok-Desktop-Universal_Installer-v1.3.0.exe`
-- **Linux**: `Grok-Desktop-Universal-v1.3.0.deb` or the `.AppImage`
+- **macOS (Apple Silicon)**: `Grok-v1.3.1-arm64.dmg` (installs `Grok.app`)
+- **Windows**: `Grok_Installer-v1.3.1.exe` (installs `Grok.exe`)
+- **Linux**: `Grok-v1.3.1.deb` or the `.AppImage`
 
 ## System Requirements
 
@@ -154,7 +154,7 @@ npm run build-all
 ### Windows
 1. Download and run `Grok-Desktop_Installer-v1.2.4.exe` from the releases page
 2. Follow the installation wizard
-3. Launch "Grok Desktop" from the Start Menu
+3. Launch **Grok** from the Start Menu
 
 ### Linux
 

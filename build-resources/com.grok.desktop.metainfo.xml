@@ -3,7 +3,7 @@
   <id>com.grok.desktop</id>
   <metadata_license>MIT</metadata_license>
   <project_license>GPL-2.0</project_license>
-  <name>Grok Desktop</name>
+  <name>Grok</name>
   <summary>Desktop application for Grok.com with tab support</summary>
   <description>
     <p>
@@ -26,7 +26,7 @@
   <developer_name>AnRkey</developer_name>
   <screenshots>
     <screenshot type="default">
-      <caption>Grok Desktop main interface</caption>
+      <caption>Grok main interface</caption>
       <image>https://raw.githubusercontent.com/AnRkey/Grok-Desktop/main/screenshot.png</image>
     </screenshot>
   </screenshots>

@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [1.3.1] - 2026-06-06
+
+### Added
+
+- **Drag ghost improvements** — padded transparent window so tab shadows and rounded corners are no longer clipped
+- **Holographic merge hint** — ghost becomes translucent when dragged over another window's tab strip
+- **In-strip reorder mode** — ghost hides while over the source window's tab bar so live tab reordering is visible
+
+### Changed
+
+- **App renamed to Grok** — builds now produce `Grok.app` (macOS) and `Grok.exe` (Windows) instead of "Grok Desktop Universal"
+- Simplified release artifact names (`Grok-v1.3.1-arm64.dmg`, `Grok_Installer-v1.3.1.exe`, etc.)
+- Updated window title, About page, Linux metainfo, and Windows build scripts for the new name
+- Bump version to 1.3.1
+
 ## [1.3.0] - 2026-06-06
 
 This release marks the **Grok Desktop Universal** fork of AnRkey/Grok-Desktop.

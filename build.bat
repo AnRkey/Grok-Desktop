@@ -7,7 +7,7 @@ set BUILD_TARGET=%1
 if "%BUILD_TARGET%"=="" set BUILD_TARGET=win
 
 echo ===================================================
-echo Building Grok Desktop - Target: %BUILD_TARGET%
+echo Building Grok - Target: %BUILD_TARGET%
 echo ===================================================
 
 :: Validate build target
@@ -32,9 +32,9 @@ echo.
 :: Clean previous build files
 echo Cleaning previous build files...
 rem Try to stop any running instances that may lock files
-echo Stopping running Grok Desktop instances ^(if any^)...
-taskkill /IM "Grok Desktop.exe" /F >nul 2>&1
-taskkill /IM "Grok Desktop.exe" /T /F >nul 2>&1
+echo Stopping running Grok instances ^(if any^)...
+taskkill /IM "Grok.exe" /F >nul 2>&1
+taskkill /IM "Grok.exe" /T /F >nul 2>&1
 taskkill /IM "electron.exe" /F >nul 2>&1
 taskkill /IM "electron.exe" /T /F >nul 2>&1
 

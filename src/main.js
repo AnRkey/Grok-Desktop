@@ -395,7 +395,7 @@ function toggleAlwaysOnTopLinux(mainWindow) {
 
   return new Promise((resolve) => {
     // Get the window title to target it specifically
-    const windowTitle = mainWindow.getTitle() || 'Grok Desktop';
+    const windowTitle = mainWindow.getTitle() || 'Grok';
 
     // First focus the window, then toggle always-on-top
     const commands = [
@@ -748,7 +748,7 @@ function setupIpcHandlers() {
 
   // Open About page in a new tab instead of a window
   ipcMain.handle('show-app-info', async () => {
-    const name = typeof app.getName === 'function' ? app.getName() : 'Grok Desktop';
+    const name = typeof app.getName === 'function' ? app.getName() : 'Grok';
     const version = typeof app.getVersion === 'function' ? app.getVersion() : '0.0.0';
     const repoUrl = 'https://github.com/AnRkey/Grok-Desktop';
 

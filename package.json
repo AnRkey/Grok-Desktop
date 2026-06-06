@@ -1,6 +1,6 @@
 {
   "name": "grok-desktop-universal",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Cross-platform (macOS, Windows, Linux) Grok desktop app with browser-style tearable tabs and multi-window support. A fork of AnRkey/Grok-Desktop.",
   "main": "src/main.js",
   "scripts": {
@@ -50,8 +50,8 @@
     "tmp": "latest"
   },
   "build": {
-    "appId": "com.grokdesktop.universal",
-    "productName": "Grok Desktop Universal",
+    "appId": "com.grok.desktop",
+    "productName": "Grok",
     "directories": {
       "output": "build"
     },
@@ -70,13 +70,13 @@
       ],
       "icon": "build-resources/grok.icns",
       "category": "public.app-category.productivity",
-      "artifactName": "Grok-Desktop-Universal_Mac-v${version}-${arch}.${ext}"
+      "artifactName": "Grok-v${version}-${arch}.${ext}"
     },
     "rpm": {
-      "artifactName": "Grok-Desktop-Universal-v${version}.${ext}"
+      "artifactName": "Grok-v${version}.${ext}"
     },
     "deb": {
-      "artifactName": "Grok-Desktop-Universal-v${version}.${ext}"
+      "artifactName": "Grok-v${version}.${ext}"
     },
     "win": {
       "target": [
@@ -92,14 +92,14 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Grok Desktop Universal",
-      "artifactName": "Grok-Desktop-Universal_Installer-v${version}.exe"
+      "shortcutName": "Grok",
+      "artifactName": "Grok_Installer-v${version}.exe"
     },
     "msi": {
-      "artifactName": "Grok-Desktop-Universal_Installer-v${version}.msi"
+      "artifactName": "Grok_Installer-v${version}.msi"
     },
     "portable": {
-      "artifactName": "Grok-Desktop-Universal_Portable-v${version}.exe"
+      "artifactName": "Grok-v${version}.exe"
     },
     "compression": "maximum",
     "asar": true,
