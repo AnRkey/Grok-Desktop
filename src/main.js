@@ -194,23 +194,31 @@ let appInitialized = false;
 let dragGhostWindow = null;
 let dragGhostTimer = null;
 let dragGhostWatchdog = null;
+let dragGhostState = 'normal';
+
+// Transparent padding (px) baked around the chip so its rounded corners and
+// drop shadow render fully INSIDE the window bounds instead of being clipped.
+const GHOST_PAD = 34;
+const GHOST_WIDTH = 360;
+const GHOST_HEIGHT = 110;
 
 function buildGhostHtml(title, count) {
   const dark = nativeTheme.shouldUseDarkColors;
   const bg = dark ? '#3b3e45' : '#ffffff';
-  const fg = dark ? '#e6e6e6' : '#000000';
-  const border = dark ? '#555555' : '#dddddd';
+  const fg = dark ? '#e6e6e6' : '#1a1a1a';
+  const border = dark ? '#5a5d63' : '#e2e2e2';
   const safeTitle = String(title || 'Grok').replace(/[<>&"]/g, (c) => (
     { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]
   ));
   const badge = count > 1 ? `<span class="b">+${count - 1}</span>` : '';
   return `<!doctype html><html><head><meta charset="utf-8"><style>
-    html,body{margin:0;padding:0;background:transparent;overflow:hidden;}
+    html,body{margin:0;background:transparent;overflow:hidden;}
+    body{padding:${GHOST_PAD}px;}
     .chip{box-sizing:border-box;display:inline-flex;align-items:center;height:34px;
       padding:7px 12px;font:12px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-      color:${fg};background:${bg};border:1px solid ${border};border-radius:8px;
-      box-shadow:0 10px 26px rgba(0,0,0,.40);white-space:nowrap;}
-    .t{overflow:hidden;text-overflow:ellipsis;max-width:200px;}
+      color:${fg};background:${bg};border:1px solid ${border};border-radius:9px;
+      box-shadow:0 8px 22px rgba(0,0,0,.35);white-space:nowrap;}
+    .t{overflow:hidden;text-overflow:ellipsis;max-width:220px;}
     .b{background:#4CAF50;color:#fff;border-radius:9px;padding:0 6px;font-size:11px;font-weight:600;margin-left:8px;}
   </style></head><body><div class="chip"><span class="t">${safeTitle}</span>${badge}</div></body></html>`;
 }
@@ -219,8 +227,29 @@ function positionGhostAtCursor() {
   if (!dragGhostWindow || dragGhostWindow.isDestroyed()) return;
   try {
     const p = screen.getCursorScreenPoint();
-    // Anchor the chip just below-right of the cursor (like a native drag image)
-    dragGhostWindow.setPosition(Math.round(p.x - 14), Math.round(p.y + 16));
+    // Anchor the chip just below-right of the cursor. Subtract the transparent
+    // padding so the visible chip (not the window edge) tracks the cursor.
+    dragGhostWindow.setPosition(
+      Math.round(p.x - 12 - GHOST_PAD),
+      Math.round(p.y + 14 - GHOST_PAD)
+    );
+  } catch (_) {}
+}
+
+// Switch the ghost between: 'normal' (floating chip), 'ghost' (holographic /
+// translucent, shown while hovering another window to signal a merge), and
+// 'hidden' (over the source window's own strip, so the live reorder shows).
+function setGhostState(state) {
+  if (!dragGhostWindow || dragGhostWindow.isDestroyed()) return;
+  if (state === dragGhostState) return;
+  dragGhostState = state;
+  try {
+    if (state === 'hidden') {
+      dragGhostWindow.hide();
+      return;
+    }
+    dragGhostWindow.setOpacity(state === 'ghost' ? 0.4 : 1);
+    if (!dragGhostWindow.isVisible()) dragGhostWindow.showInactive();
   } catch (_) {}
 }
 
@@ -231,14 +260,16 @@ function destroyDragGhost() {
     try { dragGhostWindow.destroy(); } catch (_) {}
   }
   dragGhostWindow = null;
+  dragGhostState = 'normal';
 }
 
 function createDragGhost(info) {
   destroyDragGhost();
+  dragGhostState = 'normal';
 
   dragGhostWindow = new BrowserWindow({
-    width: 280,
-    height: 44,
+    width: GHOST_WIDTH,
+    height: GHOST_HEIGHT,
     frame: false,
     transparent: true,
     resizable: false,
@@ -604,18 +635,39 @@ function setupIpcHandlers() {
     try { createDragGhost(info || {}); } catch (_) {}
   });
 
-  // Live highlight of a window's tab strip while a tab is dragged over it
+  // Live highlight of a window's tab strip while a tab is dragged over it,
+  // plus driving the ghost's appearance (hidden / holographic / normal).
   ipcMain.on('tab-drag-hover', (event) => {
     const point = screen.getCursorScreenPoint();
     const sourceWin = BrowserWindow.fromWebContents(event.sender);
+
+    // Over the source window's OWN strip => hide the ghost so the user sees the
+    // live in-strip reorder (drag a tab onto itself / its neighbours).
+    if (sourceWin && !sourceWin.isDestroyed()) {
+      let b = null;
+      try { b = sourceWin.getContentBounds(); } catch (_) {}
+      if (b) {
+        const overOwn = point.x >= b.x && point.x <= b.x + b.width &&
+                        point.y >= b.y && point.y <= b.y + TAB_BAR_HEIGHT;
+        if (overOwn) {
+          clearDropIndicators();
+          setGhostState('hidden');
+          return;
+        }
+      }
+    }
+
     const target = findTabBarWindowAt(point, sourceWin ? sourceWin.id : null);
     const targetId = target ? target.id : null;
-    if (targetId === lastHoverTargetId) return;
-    clearDropIndicators();
-    if (target) {
-      target.webContents.send('drop-indicator', true);
-      lastHoverTargetId = targetId;
+    if (targetId !== lastHoverTargetId) {
+      clearDropIndicators();
+      if (target) {
+        target.webContents.send('drop-indicator', true);
+        lastHoverTargetId = targetId;
+      }
     }
+    // Over another window => holographic; over empty space => solid chip.
+    setGhostState(target ? 'ghost' : 'normal');
   });
 
   ipcMain.on('tab-drag-end', () => {
