@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval'; media-src * data: blob: https:; img-src * data: blob: https:; connect-src * data: blob: https:; frame-src * https: data:; child-src * https: data:;">
-  <title>Grok Desktop</title>
+  <title>Grok</title>
   <link rel="stylesheet" href="styles.css">
   <style>
     :root {
@@ -109,10 +109,47 @@
       cursor: pointer;
       overflow: hidden;
       position: relative;
+      user-select: none;
+      transition: opacity 120ms ease, box-shadow 120ms ease, transform 120ms ease;
     }
 
     .tab.active {
       background-color: var(--color-bg-tab-active);
+    }
+
+    /* Tab being dragged: dim the original slot */
+    .tab.dragging {
+      opacity: 0.3;
+    }
+
+    /* Multi-selected tabs (Cmd/Ctrl or Shift click) */
+    .tab.selected {
+      box-shadow: inset 0 0 0 2px #4CAF50;
+    }
+
+    /* Highlight a tab strip that a dragged tab can be dropped onto */
+    .tabs-container.drop-target::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 50px;
+      border: 2px solid #4CAF50;
+      box-sizing: border-box;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    /* Transparent overlay placed above the webviews during a drag so the
+       document keeps receiving mouse events anywhere in the window (webviews
+       otherwise swallow the mouse, which made the chip feel stuck to the bar) */
+    .tab-drag-shield {
+      position: fixed;
+      inset: 0;
+      z-index: 9998;
+      background: transparent;
+      cursor: grabbing;
     }
 
     .tab-title {
@@ -463,6 +500,9 @@
       tabsContainer: document.getElementById('tabs'),
       viewsContainer: document.getElementById('views'),
       newTabButton: null,
+      selectedTabIds: new Set(),
+      selectionAnchor: null,
+      drag: null,
       
       init() {
         // Create the new tab button
@@ -501,8 +541,23 @@
           });
         });
         
-        // Create initial tab
-        this.createTab('https://grok.com');
+        // Create initial tab (or restore an extracted tab in a new window)
+        const startupParams = new URLSearchParams(window.location.search.slice(1));
+        const extractedUrl = startupParams.get('url');
+        const extractedTitle = startupParams.get('title');
+        if (extractedUrl) {
+          const tabId = this.createTab(extractedUrl);
+          if (extractedTitle) {
+            const tab = this.tabs.find((entry) => entry.id === tabId);
+            if (tab) {
+              const titleElement = tab.element.querySelector('.tab-title');
+              titleElement.textContent = extractedTitle;
+              titleElement.title = extractedTitle;
+            }
+          }
+        } else {
+          this.createTab('https://grok.com');
+        }
 
         // After initial UI is ready, check for updates
         checkForUpdate();
@@ -598,16 +653,15 @@
         // Update the new tab button position
         this.updateNewTabButtonPosition();
         
-        // Set up event listeners
-        tabElement.addEventListener('click', (e) => {
-          if (!e.target.classList.contains('tab-close')) {
-            this.activateTab(tabId);
-          }
-        });
-        
-        tabElement.querySelector('.tab-close').addEventListener('click', () => {
+        // Set up drag + click handling (selection, reorder, tear-off, re-attach)
+        this.setupTabDrag(tabElement, tabId, webview);
+
+        tabElement.querySelector('.tab-close').addEventListener('click', (e) => {
+          e.stopPropagation();
           this.closeTab(tabId);
         });
+
+        tabElement.title = 'Click to switch · drag to reorder · drag out for a new window · Cmd/Ctrl-click to multi-select';
         
         // Set up webview events
         webview.addEventListener('page-title-updated', (e) => {
@@ -702,6 +756,264 @@
         this.activateTab(tabId);
         
         return tabId;
+      },
+
+      getTabUrl(tab) {
+        try {
+          return (tab.webview && (tab.webview.getURL() || tab.webview.src)) || 'https://grok.com';
+        } catch (_) {
+          return (tab.webview && tab.webview.src) || 'https://grok.com';
+        }
+      },
+
+      getTabTitle(tab) {
+        const el = tab.element.querySelector('.tab-title');
+        const text = el ? el.textContent.trim() : '';
+        return text || 'Grok';
+      },
+
+      refreshSelectionStyles() {
+        const multi = this.selectedTabIds.size > 1;
+        this.tabs.forEach((tab) => {
+          if (multi && this.selectedTabIds.has(tab.id)) tab.element.classList.add('selected');
+          else tab.element.classList.remove('selected');
+        });
+      },
+
+      clearSelection() {
+        this.selectedTabIds = new Set();
+        this.refreshSelectionStyles();
+      },
+
+      handleTabClick(tabId, e) {
+        if (e.metaKey || e.ctrlKey) {
+          if (this.selectedTabIds.has(tabId)) this.selectedTabIds.delete(tabId);
+          else this.selectedTabIds.add(tabId);
+          this.selectionAnchor = tabId;
+          this.activateTab(tabId);
+        } else if (e.shiftKey && this.selectionAnchor) {
+          const order = this.tabs.map((t) => t.id);
+          const a = order.indexOf(this.selectionAnchor);
+          const b = order.indexOf(tabId);
+          if (a !== -1 && b !== -1) {
+            this.selectedTabIds = new Set(order.slice(Math.min(a, b), Math.max(a, b) + 1));
+          }
+          this.activateTab(tabId);
+        } else {
+          this.selectedTabIds = new Set([tabId]);
+          this.selectionAnchor = tabId;
+          this.activateTab(tabId);
+        }
+        this.refreshSelectionStyles();
+      },
+
+      orderedDragIds(primaryId) {
+        if (this.selectedTabIds.has(primaryId) && this.selectedTabIds.size > 1) {
+          return this.tabs.map((t) => t.id).filter((id) => this.selectedTabIds.has(id));
+        }
+        return [primaryId];
+      },
+
+      isOverOwnStrip(clientX, clientY) {
+        return clientY >= 0 && clientY <= 50 && clientX >= 0 && clientX <= window.innerWidth;
+      },
+
+      setupTabDrag(tabElement, tabId) {
+        const DRAG_THRESHOLD = 5;
+        let start = null;
+
+        const onMouseMove = (e) => {
+          if (!start) return;
+          if (!this.drag) {
+            const moved = Math.hypot(e.clientX - start.x, e.clientY - start.y);
+            if (moved < DRAG_THRESHOLD) return;
+            this.beginDrag(tabId);
+          }
+          this.updateDrag(e.clientX, e.clientY);
+        };
+
+        const onMouseUp = (e) => {
+          document.removeEventListener('mousemove', onMouseMove);
+          document.removeEventListener('mouseup', onMouseUp);
+          if (this.drag) {
+            this.endDrag(e.clientX, e.clientY);
+          } else if (start && !start.onClose) {
+            this.handleTabClick(tabId, e);
+          }
+          start = null;
+        };
+
+        tabElement.addEventListener('mousedown', (e) => {
+          if (e.button !== 0) return;
+          const onClose = e.target.classList.contains('tab-close');
+          start = { x: e.clientX, y: e.clientY, onClose };
+          if (onClose) return;
+          document.addEventListener('mousemove', onMouseMove);
+          document.addEventListener('mouseup', onMouseUp);
+        });
+      },
+
+      beginDrag(primaryId) {
+        const ids = this.orderedDragIds(primaryId);
+        if (ids.length === 1) {
+          this.selectedTabIds = new Set(ids);
+          this.selectionAnchor = primaryId;
+          this.refreshSelectionStyles();
+        }
+
+        const primaryTab = this.tabs.find((t) => t.id === primaryId);
+        this.activateTab(primaryId);
+
+        this.drag = { ids, primaryId, shield: null, lastHoverSent: 0 };
+
+        ids.forEach((id) => {
+          const tab = this.tabs.find((t) => t.id === id);
+          if (tab) tab.element.classList.add('dragging');
+        });
+
+        // Shield above the webviews keeps mouse events on this document so the
+        // drag keeps tracking over tabs, the page, and outside the window.
+        const shield = document.createElement('div');
+        shield.className = 'tab-drag-shield';
+        document.body.appendChild(shield);
+        this.drag.shield = shield;
+
+        // Ask main to spawn the native ghost window (floats above everything,
+        // including the title bar, and can leave the window entirely).
+        try {
+          ipcRenderer.send('tab-drag-start', {
+            title: primaryTab ? this.getTabTitle(primaryTab) : 'Grok',
+            count: ids.length
+          });
+        } catch (_) {}
+      },
+
+      updateDrag(clientX, clientY) {
+        if (!this.drag) return;
+
+        // Reorder only while the cursor is over this window's own strip
+        if (this.isOverOwnStrip(clientX, clientY)) {
+          this.reorderDuringDrag(clientX);
+        }
+
+        // Throttled: let main move the ghost target highlight to the window
+        // whose strip we're over (the ghost itself follows the global cursor).
+        const now = Date.now();
+        if (now - this.drag.lastHoverSent > 40) {
+          this.drag.lastHoverSent = now;
+          try { ipcRenderer.send('tab-drag-hover'); } catch (_) {}
+        }
+      },
+
+      reorderDuringDrag(clientX) {
+        if (!this.drag) return;
+        const primaryTab = this.tabs.find((t) => t.id === this.drag.primaryId);
+        if (!primaryTab) return;
+        const dragEl = primaryTab.element;
+
+        const siblings = this.tabs
+          .filter((t) => !this.drag.ids.includes(t.id))
+          .map((t) => t.element);
+
+        let inserted = false;
+        for (const sib of siblings) {
+          const rect = sib.getBoundingClientRect();
+          if (clientX < rect.left + rect.width / 2) {
+            if (dragEl.nextSibling !== sib) this.tabsContainer.insertBefore(dragEl, sib);
+            inserted = true;
+            break;
+          }
+        }
+        if (!inserted) {
+          this.tabsContainer.insertBefore(dragEl, this.newTabButton);
+        }
+        this.syncTabsOrderFromDom();
+      },
+
+      syncTabsOrderFromDom() {
+        const orderedIds = Array.from(this.tabsContainer.querySelectorAll('.tab')).map((el) => el.id);
+        this.tabs.sort((a, b) => orderedIds.indexOf(a.id) - orderedIds.indexOf(b.id));
+        this.updateScrollButtons();
+      },
+
+      async endDrag(clientX, clientY) {
+        if (!this.drag) return;
+        const drag = this.drag;
+        this.drag = null;
+
+        if (drag.shield && drag.shield.parentNode) drag.shield.parentNode.removeChild(drag.shield);
+        drag.ids.forEach((id) => {
+          const tab = this.tabs.find((t) => t.id === id);
+          if (tab) tab.element.classList.remove('dragging');
+        });
+        // Destroys the native ghost window + clears cross-window drop highlight
+        try { ipcRenderer.send('tab-drag-end'); } catch (_) {}
+
+        // Released back on our own strip => it was just a reorder
+        if (this.isOverOwnStrip(clientX, clientY)) {
+          this.syncTabsOrderFromDom();
+          return;
+        }
+
+        // Released outside => tear off into a new window or merge into another window
+        const draggedTabs = drag.ids
+          .map((id) => this.tabs.find((t) => t.id === id))
+          .filter(Boolean)
+          .map((tab) => ({ id: tab.id, url: this.getTabUrl(tab), title: this.getTabTitle(tab) }));
+
+        if (draggedTabs.length === 0) return;
+
+        let result = { attached: false, created: false };
+        try {
+          result = await ipcRenderer.invoke('tab-drop', {
+            tabs: draggedTabs.map((t) => ({ url: t.url, title: t.title }))
+          });
+        } catch (error) {
+          console.error('Tab drop failed:', error);
+          return;
+        }
+
+        if (!result || (!result.attached && !result.created)) return;
+
+        draggedTabs.forEach((t) => this.removeTab(t.id));
+        this.clearSelection();
+
+        if (this.tabs.length === 0) {
+          try { await ipcRenderer.invoke('close-current-window'); } catch (_) {}
+        } else {
+          this.updateNewTabButtonPosition();
+          if (!this.activeTabId || !this.tabs.find((t) => t.id === this.activeTabId)) {
+            this.activateTab(this.tabs[0].id);
+          }
+        }
+      },
+
+      cancelDrag() {
+        if (!this.drag) return;
+        const drag = this.drag;
+        this.drag = null;
+        if (drag.shield && drag.shield.parentNode) drag.shield.parentNode.removeChild(drag.shield);
+        drag.ids.forEach((id) => {
+          const tab = this.tabs.find((t) => t.id === id);
+          if (tab) tab.element.classList.remove('dragging');
+        });
+        this.syncTabsOrderFromDom();
+        try { ipcRenderer.send('tab-drag-end'); } catch (_) {}
+      },
+
+      removeTab(tabId) {
+        const tabIndex = this.tabs.findIndex((tab) => tab.id === tabId);
+        if (tabIndex === -1) return;
+
+        const tab = this.tabs[tabIndex];
+        tab.element.remove();
+        tab.view.remove();
+        this.tabs.splice(tabIndex, 1);
+        this.selectedTabIds.delete(tabId);
+
+        if (this.activeTabId === tabId) {
+          this.activeTabId = null;
+        }
       },
 
       activateNextTab() {
@@ -830,6 +1142,7 @@
           
           // Remove from tabs array
           this.tabs.splice(tabIndex, 1);
+          this.selectedTabIds.delete(tabId);
           
           // If this was the active tab, activate another one
           if (this.activeTabId === tabId) {
@@ -875,6 +1188,26 @@
     });
     ipcRenderer.on('open-about-tab', (event, aboutUrl) => {
       tabManager.createTab(aboutUrl);
+    });
+
+    // A tab dragged from another window was dropped onto this window's strip
+    ipcRenderer.on('attach-tab', (event, payload) => {
+      if (!payload || !payload.url) return;
+      const tabId = tabManager.createTab(payload.url);
+      if (payload.title) {
+        const tab = tabManager.tabs.find((entry) => entry.id === tabId);
+        if (tab) {
+          const titleElement = tab.element.querySelector('.tab-title');
+          titleElement.textContent = payload.title;
+          titleElement.title = payload.title;
+        }
+      }
+    });
+
+    // Highlight this window's tab strip when a dragged tab can be dropped onto it
+    ipcRenderer.on('drop-indicator', (event, show) => {
+      const container = document.querySelector('.tabs-container');
+      if (container) container.classList.toggle('drop-target', !!show);
     });
 
     // Usage stats management
@@ -1069,6 +1402,12 @@
     document.addEventListener('DOMContentLoaded', () => {
       tabManager.init();
       usageStats.init();
+
+      // Safety nets so a drag can never get stuck (e.g. if a mouseup is missed)
+      window.addEventListener('blur', () => tabManager.cancelDrag());
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') tabManager.cancelDrag();
+      });
       // Click to open latest release page
       const indicator = document.getElementById('update-indicator');
       if (indicator) {

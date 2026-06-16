@@ -1,38 +1,57 @@
-# Grok-Desktop v1.2.4
+# Grok v1.3.1
+
+> A cross-platform fork of [AnRkey/Grok-Desktop](https://github.com/AnRkey/Grok-Desktop) with native **macOS** builds and **browser-style tearable tabs**.
 
 ## Description
-Grok-Desktop is an Electron-based desktop application for Windows 10/11 and Linux that wraps `grok.com`, providing desktop-application-like access to Grok with real-time API usage monitoring, multi-tab support, and seamless authentication for xAI, Google, and Apple accounts.
+
+Grok is an Electron-based desktop application for **macOS, Windows 10/11, and Linux** that wraps `grok.com`, providing desktop-application-like access to Grok with real-time API usage monitoring, multi-tab support, and seamless authentication for xAI, Google, and Apple accounts.
 
 ## Screenshot
+
 ![Screenshot](screenshot.png)
 
+## What's new in this fork
+
+- **Native macOS support** (Apple Silicon / arm64) with proper `.icns` icon and DMG/ZIP packaging
+- **Browser-style tearable tabs** - drag a tab out of the window to pop it into its own window, just like Chrome/Firefox
+- **Multi-window support** - drag tabs back onto another window's tab strip to merge them
+- **Multi-select tabs** - `Cmd/Ctrl`-click and `Shift`-click to move several tabs at once
+- **Automated cross-platform release builds** via GitHub Actions (macOS, Windows, and Linux artifacts)
+
 ## Features
+
 - **Desktop application wrapper** for grok.com
 - **Tabs functionality** for multiple Grok conversations
+- **Tearable / dockable tabs** - pull a tab into its own window or merge it back
 - **Real-time Usage Monitoring** - Track your Grok usage limits:
   - **Low Effort**: Basic query limits and remaining tokens
   - **High Effort**: Advanced feature usage tracking
   - **Grok 4 Heavy**: Specialized model usage limits
   - **Refill Timer**: Shows when limits reset
 - **Keyboard shortcuts**:
-  - `Ctrl+T`: Open a new tab
-  - `Ctrl+Tab` / `Ctrl+Shift+Tab`: Cycle through open tabs (next/previous)
-  - `Ctrl+R`: Reload the active tab
-  - `Ctrl+I`: Show information/about dialog
+  - `Ctrl/Cmd+T`: Open a new tab
+  - `Ctrl/Cmd+Tab` / `Ctrl/Cmd+Shift+Tab`: Cycle through open tabs (next/previous)
+  - `Ctrl/Cmd+R`: Reload the active tab
+  - `Ctrl/Cmd+I`: Show information/about dialog
 - **Authentication support** for xAI, Google, and Apple accounts
 - **Clean interface** with no menu bar for distraction-free usage
-- **Always-on-top function** with cross-platform support (Windows & Linux)
+- **Always-on-top function** with cross-platform support (macOS, Windows & Linux)
 - **Dark/Light mode support** with system theme detection
 - **Grok speech mode** support
 - **Enhanced security** with domain validation and OAuth protection
 
 ## Download
-[Download Grok-Desktop_Installer-v1.2.4.exe](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.4/Grok-Desktop_Installer-v1.2.4.exe)
+
+Pre-built installers for macOS, Windows, and Linux are published automatically on the [Releases page](https://github.com/perlytiara/Grok-Desktop-Universal/releases) of this fork.
+
+- **macOS (Apple Silicon)**: `Grok-v1.3.1-arm64.dmg` (installs `Grok.app`)
+- **Windows**: `Grok_Installer-v1.3.1.exe` (installs `Grok.exe`)
+- **Linux**: `Grok-v1.3.1.deb` or the `.AppImage`
 
 ## System Requirements
 
 ### For Using the Application
-- **Operating System**: Windows 10/11 or Linux (Rocky Linux 9/10, RHEL 9, Ubuntu, Fedora, etc.)
+- **Operating System**: macOS 12+ (Apple Silicon), Windows 10/11, or Linux (Rocky Linux 9/10, RHEL 9, Ubuntu, Fedora, etc.)
 - **Internet connection** for accessing grok.com
 - **Grok account** (sign up in-app or use Google/Apple/xAI authentication)
 - **Linux AOT (Always-on-Top) requirement**: Install `wmctrl` for Always-on-Top functionality:
@@ -40,9 +59,26 @@ Grok-Desktop is an Electron-based desktop application for Windows 10/11 and Linu
   - Ubuntu/Debian: `sudo apt install wmctrl`
 
 ### For Building from Source
-- **Operating System**: Windows 10/11 or Linux
+- **Operating System**: macOS, Windows 10/11, or Linux
 - **Node.js**: LTS version (20.x recommended)
 - **Internet connection** for downloading dependencies
+
+### Building locally
+
+```bash
+npm install
+
+# macOS (Apple Silicon)
+npm run build-mac-arm64
+
+# Windows
+npm run build
+
+# Linux (deb + rpm)
+npm run build-rpm-deb
+```
+
+Built installers are written to the `build/` directory. Cross-platform release artifacts are also produced automatically by the GitHub Actions workflow in `.github/workflows/build.yml` whenever a `v*` tag is pushed.
 
 ## Project Structure
 ```
@@ -118,7 +154,7 @@ npm run build-all
 ### Windows
 1. Download and run `Grok-Desktop_Installer-v1.2.4.exe` from the releases page
 2. Follow the installation wizard
-3. Launch "Grok Desktop" from the Start Menu
+3. Launch **Grok** from the Start Menu
 
 ### Linux
 

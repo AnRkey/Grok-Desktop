@@ -1,5 +1,5 @@
 
-const { app, BrowserWindow, shell, Menu, ipcMain, nativeTheme, session, webContents, dialog } = require('electron');
+const { app, BrowserWindow, shell, Menu, ipcMain, nativeTheme, session, webContents, dialog, screen } = require('electron');
 const os = require('os');
 const fs = require('fs');
 const { exec } = require('child_process');
@@ -182,9 +182,126 @@ ipcMain.handle('open-external-url', async (_event, url) => {
 });
 const path = require('path');
 
-// Keep a global reference of the window object to prevent garbage collection
+// Keep a global reference to the primary window for single-instance focus
 let mainWindow;
-let aboutWindow;
+let appInitialized = false;
+
+// --- Native drag ghost (its own top-level window) ----------------------------
+// A small transparent, click-through, always-on-top window that mirrors the
+// dragged tab. Because it is a separate window it floats ABOVE everything,
+// including this app's own title bar and other windows, and can travel outside
+// the window bounds — the Chrome/Firefox style tab "drag image".
+let dragGhostWindow = null;
+let dragGhostTimer = null;
+let dragGhostWatchdog = null;
+let dragGhostState = 'normal';
+
+// Transparent padding (px) baked around the chip so its rounded corners and
+// drop shadow render fully INSIDE the window bounds instead of being clipped.
+const GHOST_PAD = 34;
+const GHOST_WIDTH = 360;
+const GHOST_HEIGHT = 110;
+
+function buildGhostHtml(title, count) {
+  const dark = nativeTheme.shouldUseDarkColors;
+  const bg = dark ? '#3b3e45' : '#ffffff';
+  const fg = dark ? '#e6e6e6' : '#1a1a1a';
+  const border = dark ? '#5a5d63' : '#e2e2e2';
+  const safeTitle = String(title || 'Grok').replace(/[<>&"]/g, (c) => (
+    { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]
+  ));
+  const badge = count > 1 ? `<span class="b">+${count - 1}</span>` : '';
+  return `<!doctype html><html><head><meta charset="utf-8"><style>
+    html,body{margin:0;background:transparent;overflow:hidden;}
+    body{padding:${GHOST_PAD}px;}
+    .chip{box-sizing:border-box;display:inline-flex;align-items:center;height:34px;
+      padding:7px 12px;font:12px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      color:${fg};background:${bg};border:1px solid ${border};border-radius:9px;
+      box-shadow:0 8px 22px rgba(0,0,0,.35);white-space:nowrap;}
+    .t{overflow:hidden;text-overflow:ellipsis;max-width:220px;}
+    .b{background:#4CAF50;color:#fff;border-radius:9px;padding:0 6px;font-size:11px;font-weight:600;margin-left:8px;}
+  </style></head><body><div class="chip"><span class="t">${safeTitle}</span>${badge}</div></body></html>`;
+}
+
+function positionGhostAtCursor() {
+  if (!dragGhostWindow || dragGhostWindow.isDestroyed()) return;
+  try {
+    const p = screen.getCursorScreenPoint();
+    // Anchor the chip just below-right of the cursor. Subtract the transparent
+    // padding so the visible chip (not the window edge) tracks the cursor.
+    dragGhostWindow.setPosition(
+      Math.round(p.x - 12 - GHOST_PAD),
+      Math.round(p.y + 14 - GHOST_PAD)
+    );
+  } catch (_) {}
+}
+
+// Switch the ghost between: 'normal' (floating chip), 'ghost' (holographic /
+// translucent, shown while hovering another window to signal a merge), and
+// 'hidden' (over the source window's own strip, so the live reorder shows).
+function setGhostState(state) {
+  if (!dragGhostWindow || dragGhostWindow.isDestroyed()) return;
+  if (state === dragGhostState) return;
+  dragGhostState = state;
+  try {
+    if (state === 'hidden') {
+      dragGhostWindow.hide();
+      return;
+    }
+    dragGhostWindow.setOpacity(state === 'ghost' ? 0.4 : 1);
+    if (!dragGhostWindow.isVisible()) dragGhostWindow.showInactive();
+  } catch (_) {}
+}
+
+function destroyDragGhost() {
+  if (dragGhostTimer) { clearInterval(dragGhostTimer); dragGhostTimer = null; }
+  if (dragGhostWatchdog) { clearTimeout(dragGhostWatchdog); dragGhostWatchdog = null; }
+  if (dragGhostWindow && !dragGhostWindow.isDestroyed()) {
+    try { dragGhostWindow.destroy(); } catch (_) {}
+  }
+  dragGhostWindow = null;
+  dragGhostState = 'normal';
+}
+
+function createDragGhost(info) {
+  destroyDragGhost();
+  dragGhostState = 'normal';
+
+  dragGhostWindow = new BrowserWindow({
+    width: GHOST_WIDTH,
+    height: GHOST_HEIGHT,
+    frame: false,
+    transparent: true,
+    resizable: false,
+    movable: false,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    skipTaskbar: true,
+    focusable: false,
+    hasShadow: false,
+    acceptFirstMouse: false,
+    alwaysOnTop: true,
+    show: false,
+    webPreferences: { nodeIntegration: false, contextIsolation: true }
+  });
+
+  try { dragGhostWindow.setIgnoreMouseEvents(true); } catch (_) {}
+  try { dragGhostWindow.setAlwaysOnTop(true, 'screen-saver'); } catch (_) {}
+  if (typeof dragGhostWindow.setVisibleOnAllWorkspaces === 'function') {
+    try { dragGhostWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true }); } catch (_) {}
+  }
+
+  const html = buildGhostHtml(info && info.title, (info && info.count) || 1);
+  dragGhostWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
+
+  positionGhostAtCursor();
+  try { dragGhostWindow.showInactive(); } catch (_) {}
+
+  dragGhostTimer = setInterval(positionGhostAtCursor, 16);
+  // Safety net: never let the ghost outlive a drag even if a mouseup is missed
+  dragGhostWatchdog = setTimeout(destroyDragGhost, 30000);
+}
 
 // Allow autoplay without user gesture (for seamless audio playback)
 try { app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required'); } catch (_) {}
@@ -278,7 +395,7 @@ function toggleAlwaysOnTopLinux(mainWindow) {
 
   return new Promise((resolve) => {
     // Get the window title to target it specifically
-    const windowTitle = mainWindow.getTitle() || 'Grok Desktop';
+    const windowTitle = mainWindow.getTitle() || 'Grok';
 
     // First focus the window, then toggle always-on-top
     const commands = [
@@ -298,32 +415,31 @@ function toggleAlwaysOnTopLinux(mainWindow) {
   });
 }
 
-function createWindow() {
-  // Create the browser window
-  mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    minWidth: 800,
-    minHeight: 600,
-    webPreferences: {
-      nodeIntegration: true, // Enable Node.js integration
-      contextIsolation: false, // Disable context isolation for this use case
-      webviewTag: true, // Enable webview tag for tabs
-      spellcheck: true
-    },
-    icon: path.join(__dirname, 'grok.png')
+function broadcastThemeUpdate() {
+  const theme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
+  BrowserWindow.getAllWindows().forEach((win) => {
+    if (!win.isDestroyed()) {
+      win.webContents.send('system-theme-updated', theme);
+    }
   });
+}
 
-  // Disable the menu bar
-  Menu.setApplicationMenu(null);
+function applyColorSchemeToAll() {
+  const scheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
+  try {
+    webContents.getAllWebContents().forEach((wc) => {
+      if (typeof wc.setColorScheme === 'function') {
+        if (forcedLightWebContentsIds.has(wc.id)) {
+          wc.setColorScheme('light');
+        } else {
+          wc.setColorScheme(scheme);
+        }
+      }
+    });
+  } catch (_) {}
+}
 
-  // Ensure shortcuts work when focus is on the main window UI
-  try { attachShortcutHandlers(mainWindow.webContents); } catch (_) {}
-
-  // Load the index.html file
-  mainWindow.loadFile(path.join(__dirname, '../index.html'));
-
-  // Configure spellchecker languages for default session and webview partition
+function configureSpellcheck() {
   try {
     const locale = (typeof app.getLocale === 'function' && app.getLocale()) || 'en-US';
     const languages = Array.isArray(locale) ? locale : [locale];
@@ -348,60 +464,28 @@ function createWindow() {
       }
     }
   } catch (_) {}
+}
 
-  // Send initial theme and listen for OS theme changes
-  const sendTheme = () => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('system-theme-updated', nativeTheme.shouldUseDarkColors ? 'dark' : 'light');
-    }
-  };
-  sendTheme();
-  // Apply color scheme to all web contents (main and webviews)
-  const applyColorSchemeToAll = () => {
-    const scheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
-    try {
-      webContents.getAllWebContents().forEach((wc) => {
-        if (typeof wc.setColorScheme === 'function') {
-          if (forcedLightWebContentsIds.has(wc.id)) {
-            wc.setColorScheme('light');
-          } else {
-            wc.setColorScheme(scheme);
-          }
-        }
-      });
-    } catch (_) {}
-  };
+function initializeAppOnce() {
+  if (appInitialized) return;
+  appInitialized = true;
+
+  Menu.setApplicationMenu(null);
+  configureSpellcheck();
+  setupUrlHandling();
+  setupIpcHandlers();
+  setupPermissions();
+  setupContextMenus();
+  setupKeyboardShortcuts();
+
+  broadcastThemeUpdate();
   applyColorSchemeToAll();
 
   nativeTheme.on('updated', () => {
-    sendTheme();
+    broadcastThemeUpdate();
     applyColorSchemeToAll();
   });
 
-  // Open DevTools in development mode
-  // mainWindow.webContents.openDevTools();
-
-  // Handle window closed event
-  mainWindow.on('closed', () => {
-    mainWindow = null;
-  });
-
-  // Set up URL handling
-  setupUrlHandling();
-
-  // Set up IPC handlers
-  setupIpcHandlers();
-
-  // Set up WebRTC/media permissions (allow across all domains)
-  setupPermissions();
-
-  // Enable right-click context menus
-  setupContextMenus();
-
-  // Set up keyboard shortcuts (Ctrl+T, Ctrl+Tab, Ctrl+R)
-  setupKeyboardShortcuts();
-
-  // Ensure newly created webContents/webviews get correct color scheme
   app.on('web-contents-created', (_event, contents) => {
     const scheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
     if (typeof contents.setColorScheme === 'function') {
@@ -423,13 +507,76 @@ function createWindow() {
   });
 }
 
+// Height (in px) of the in-app tab strip; used to detect drops onto a window's tab bar
+const TAB_BAR_HEIGHT = 50;
+
+function createWindow(options = {}) {
+  // Accept either a single initialTab or an array of initialTabs
+  const initialTabs = Array.isArray(options.initialTabs)
+    ? options.initialTabs
+    : (options.initialTab ? [options.initialTab] : []);
+  const position = options.position || null;
+
+  const windowOptions = {
+    width: 1200,
+    height: 800,
+    minWidth: 800,
+    minHeight: 600,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+      webviewTag: true,
+      spellcheck: true
+    },
+    icon: path.join(__dirname, 'grok.png')
+  };
+
+  if (position && Number.isFinite(position.x) && Number.isFinite(position.y)) {
+    windowOptions.x = Math.round(position.x);
+    windowOptions.y = Math.round(position.y);
+  }
+
+  const win = new BrowserWindow(windowOptions);
+
+  if (!mainWindow) {
+    mainWindow = win;
+  }
+
+  try { attachShortcutHandlers(win.webContents); } catch (_) {}
+
+  const firstTab = initialTabs[0];
+  const loadOptions = firstTab?.url
+    ? { query: { url: firstTab.url, title: firstTab.title || 'Grok' } }
+    : {};
+
+  win.loadFile(path.join(__dirname, '../index.html'), loadOptions);
+
+  win.webContents.once('did-finish-load', () => {
+    broadcastThemeUpdate();
+    // Open any additional tabs that came along in a multi-tab drag
+    const extraTabs = initialTabs.slice(1);
+    extraTabs.forEach((tab) => {
+      if (tab && tab.url) win.webContents.send('attach-tab', { url: tab.url, title: tab.title });
+    });
+  });
+
+  win.on('closed', () => {
+    if (mainWindow === win) {
+      const remaining = BrowserWindow.getAllWindows().filter((w) => !w.isDestroyed());
+      mainWindow = remaining.length > 0 ? remaining[0] : null;
+    }
+  });
+
+  return win;
+}
+
 // Create window when Electron has finished initialization
 app.whenReady().then(() => {
   checkWmctrlAvailability();
+  initializeAppOnce();
   createWindow();
 
   app.on('activate', () => {
-    // On macOS, re-create a window when the dock icon is clicked and no windows are open
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
@@ -457,25 +604,132 @@ function setupUrlHandling() {
 
 // Set up IPC handlers for renderer-to-main process communication
 function setupIpcHandlers() {
+  // ----- Browser-style tab drag / tear-off / re-attach -----
+
+  // Find a window whose tab strip is under the given screen point (for drop/merge)
+  const findTabBarWindowAt = (point, excludeId) => {
+    const wins = BrowserWindow.getAllWindows();
+    for (const win of wins) {
+      if (win.isDestroyed()) continue;
+      if (excludeId != null && win.id === excludeId) continue;
+      if (dragGhostWindow && !dragGhostWindow.isDestroyed() && win.id === dragGhostWindow.id) continue;
+      let b;
+      try { b = win.getContentBounds(); } catch (_) { continue; }
+      const inX = point.x >= b.x && point.x <= b.x + b.width;
+      const inStrip = point.y >= b.y && point.y <= b.y + TAB_BAR_HEIGHT;
+      if (inX && inStrip) return win;
+    }
+    return null;
+  };
+
+  let lastHoverTargetId = null;
+  const clearDropIndicators = () => {
+    if (lastHoverTargetId == null) return;
+    const prev = BrowserWindow.getAllWindows().find((w) => w.id === lastHoverTargetId && !w.isDestroyed());
+    if (prev) prev.webContents.send('drop-indicator', false);
+    lastHoverTargetId = null;
+  };
+
+  // Create the native, screen-roaming drag ghost when a drag begins
+  ipcMain.on('tab-drag-start', (_event, info) => {
+    try { createDragGhost(info || {}); } catch (_) {}
+  });
+
+  // Live highlight of a window's tab strip while a tab is dragged over it,
+  // plus driving the ghost's appearance (hidden / holographic / normal).
+  ipcMain.on('tab-drag-hover', (event) => {
+    const point = screen.getCursorScreenPoint();
+    const sourceWin = BrowserWindow.fromWebContents(event.sender);
+
+    // Over the source window's OWN strip => hide the ghost so the user sees the
+    // live in-strip reorder (drag a tab onto itself / its neighbours).
+    if (sourceWin && !sourceWin.isDestroyed()) {
+      let b = null;
+      try { b = sourceWin.getContentBounds(); } catch (_) {}
+      if (b) {
+        const overOwn = point.x >= b.x && point.x <= b.x + b.width &&
+                        point.y >= b.y && point.y <= b.y + TAB_BAR_HEIGHT;
+        if (overOwn) {
+          clearDropIndicators();
+          setGhostState('hidden');
+          return;
+        }
+      }
+    }
+
+    const target = findTabBarWindowAt(point, sourceWin ? sourceWin.id : null);
+    const targetId = target ? target.id : null;
+    if (targetId !== lastHoverTargetId) {
+      clearDropIndicators();
+      if (target) {
+        target.webContents.send('drop-indicator', true);
+        lastHoverTargetId = targetId;
+      }
+    }
+    // Over another window => holographic; over empty space => solid chip.
+    setGhostState(target ? 'ghost' : 'normal');
+  });
+
+  ipcMain.on('tab-drag-end', () => {
+    clearDropIndicators();
+    destroyDragGhost();
+  });
+
+  // Decide what happens when a dragged tab (or group) is released outside its own strip
+  ipcMain.handle('tab-drop', (event, payload) => {
+    clearDropIndicators();
+    destroyDragGhost();
+
+    const tabs = Array.isArray(payload?.tabs) ? payload.tabs.filter((t) => t && t.url) : [];
+    if (tabs.length === 0) return { attached: false, created: false };
+
+    const point = screen.getCursorScreenPoint();
+    const sourceWin = BrowserWindow.fromWebContents(event.sender);
+    const target = findTabBarWindowAt(point, sourceWin ? sourceWin.id : null);
+
+    if (target) {
+      // Merge the dragged tabs into the target window's tab strip
+      tabs.forEach((tab) => target.webContents.send('attach-tab', { url: tab.url, title: tab.title }));
+      if (target.isMinimized()) target.restore();
+      target.focus();
+      return { attached: true, created: false };
+    }
+
+    // Otherwise tear off into a brand-new window positioned under the cursor
+    createWindow({
+      initialTabs: tabs,
+      position: { x: point.x - 140, y: point.y - 12 }
+    });
+    return { attached: false, created: true };
+  });
+
+  ipcMain.handle('close-current-window', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win && !win.isDestroyed()) {
+      win.close();
+      return true;
+    }
+    return false;
+  });
+
   // Handle always-on-top toggle
-  ipcMain.handle('toggle-always-on-top', async () => {
-    if (!mainWindow) return false;
+  ipcMain.handle('toggle-always-on-top', async (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win || win.isDestroyed()) return false;
 
     // On Linux, use wmctrl if available for better GNOME compatibility
     if (os.platform() === 'linux') {
       if (wmctrlAvailable) {
-        const result = await toggleAlwaysOnTopLinux(mainWindow);
+        const result = await toggleAlwaysOnTopLinux(win);
         if (result) return true;
       } else {
         console.warn('Grok Desktop: wmctrl not available on Linux, AOT may not work');
       }
-      // Fall back to Electron method if wmctrl fails or isn't available
     }
 
-    // Use Electron's built-in method (works on Windows/macOS, may not work reliably on Linux GNOME/Wayland)
     try {
-      const isAlwaysOnTop = mainWindow.isAlwaysOnTop();
-      mainWindow.setAlwaysOnTop(!isAlwaysOnTop);
+      const isAlwaysOnTop = win.isAlwaysOnTop();
+      win.setAlwaysOnTop(!isAlwaysOnTop);
       return !isAlwaysOnTop;
     } catch (error) {
       console.warn('Grok Desktop: Electron AOT toggle failed:', error.message);
@@ -494,7 +748,7 @@ function setupIpcHandlers() {
 
   // Open About page in a new tab instead of a window
   ipcMain.handle('show-app-info', async () => {
-    const name = typeof app.getName === 'function' ? app.getName() : 'Grok Desktop';
+    const name = typeof app.getName === 'function' ? app.getName() : 'Grok';
     const version = typeof app.getVersion === 'function' ? app.getVersion() : '0.0.0';
     const repoUrl = 'https://github.com/AnRkey/Grok-Desktop';
 
@@ -514,9 +768,9 @@ function setupIpcHandlers() {
     urlObj.searchParams.set('developer', developer);
     urlObj.searchParams.set('contact', contactUrl);
 
-    // Send the URL to the renderer to create a new tab
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('open-about-tab', urlObj.toString());
+    const win = BrowserWindow.fromWebContents(_event.sender);
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('open-about-tab', urlObj.toString());
     }
 
     return { name, version };

@@ -1,35 +1,49 @@
 {
-  "name": "Grok-Desktop",
-  "version": "1.2.4",
-  "description": "Grok-Desktop application for Grok.com with tab support",
+  "name": "grok-desktop-universal",
+  "version": "1.3.1",
+  "description": "Cross-platform (macOS, Windows, Linux) Grok desktop app with browser-style tearable tabs and multi-window support. A fork of AnRkey/Grok-Desktop.",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
-    "build": "npx --yes electron-builder@latest --win --x64",
-    "pack": "npx --yes electron-builder@latest --dir",
-    "build-portable": "npx --yes electron-builder@latest --win portable",
-    "build-dir": "npx --yes electron-builder@latest --dir",
-    "build-installer": "npx --yes electron-builder@latest --win --x64",
-    "build-linux": "npx --yes electron-builder@latest --linux",
-    "build-rpm": "npx --yes electron-builder@latest --linux rpm",
-    "build-deb": "npx --yes electron-builder@latest --linux deb",
-    "build-rpm-deb": "npx --yes electron-builder@latest --linux rpm deb",
-    "build-all": "npx --yes electron-builder@latest --win --x64 --linux"
+    "build": "npx --yes electron-builder@24.13.3 --win --x64 --publish never",
+    "pack": "npx --yes electron-builder@24.13.3 --dir",
+    "build-portable": "npx --yes electron-builder@24.13.3 --win portable --publish never",
+    "build-dir": "npx --yes electron-builder@24.13.3 --dir",
+    "build-installer": "npx --yes electron-builder@24.13.3 --win --x64 --publish never",
+    "build-linux": "npx --yes electron-builder@24.13.3 --linux --publish never",
+    "build-rpm": "npx --yes electron-builder@24.13.3 --linux rpm --publish never",
+    "build-deb": "npx --yes electron-builder@24.13.3 --linux deb --publish never",
+    "build-rpm-deb": "npx --yes electron-builder@24.13.3 --linux rpm deb --publish never",
+    "build-mac": "npx --yes electron-builder@24.13.3 --mac --publish never",
+    "build-mac-arm64": "npx --yes electron-builder@24.13.3 --mac --arm64 --publish never",
+    "build-mac-universal": "npx --yes electron-builder@24.13.3 --mac --universal --publish never",
+    "build-all": "npx --yes electron-builder@24.13.3 --win --x64 --linux --mac --publish never"
   },
   "keywords": [
     "electron",
     "grok",
     "desktop",
-    "tabs"
+    "tabs",
+    "macos",
+    "windows",
+    "linux",
+    "cross-platform"
   ],
   "author": "AnRkey <anrkey@gmail.com>",
+  "contributors": [
+    "perlytiara (macOS port, cross-platform CI, tearable multi-window tabs)"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/perlytiara/Grok-Desktop-Universal.git"
+  },
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
     "electron-tabs": "^1.0.4"
   },
   "devDependencies": {
-    "electron": "^39.1.2"
+    "electron": "^41.1.0"
   },
   "overrides": {
     "form-data": "4.0.4",
@@ -37,7 +51,7 @@
   },
   "build": {
     "appId": "com.grok.desktop",
-    "productName": "Grok Desktop",
+    "productName": "Grok",
     "directories": {
       "output": "build"
     },
@@ -49,11 +63,20 @@
       "category": "Network",
       "icon": "build-resources/icons"
     },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "build-resources/grok.icns",
+      "category": "public.app-category.productivity",
+      "artifactName": "Grok-v${version}-${arch}.${ext}"
+    },
     "rpm": {
-      "artifactName": "Grok-Desktop-v${version}.${ext}"
+      "artifactName": "Grok-v${version}.${ext}"
     },
     "deb": {
-      "artifactName": "Grok-Desktop-v${version}.${ext}"
+      "artifactName": "Grok-v${version}.${ext}"
     },
     "win": {
       "target": [
@@ -69,14 +92,14 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Grok Desktop",
-      "artifactName": "Grok-Desktop_Installer-v${version}.exe"
+      "shortcutName": "Grok",
+      "artifactName": "Grok_Installer-v${version}.exe"
     },
     "msi": {
-      "artifactName": "Grok-Desktop_Installer-v${version}.msi"
+      "artifactName": "Grok_Installer-v${version}.msi"
     },
     "portable": {
-      "artifactName": "Grok-Desktop_Portable-v${version}.exe"
+      "artifactName": "Grok-v${version}.exe"
     },
     "compression": "maximum",
     "asar": true,
