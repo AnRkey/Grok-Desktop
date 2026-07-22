@@ -1,28 +1,59 @@
-const { ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer } = require('electron');
 
-// Since we're using nodeIntegration: true and contextIsolation: false,
-// we don't need to use contextBridge. Instead, we can expose our API
-// directly to the window object.
+const validSendChannels = [
+  'tab-created',
+  'tab-closed',
+  'navigate-to-url',
+  'renderer-error',
+  'renderer-promise-rejection'
+];
 
-window.api = {
-  // Send a message to the main process
+const validReceiveChannels = [
+  'new-tab',
+  'close-tab',
+  'url-updated',
+  'system-theme-updated',
+  'shortcut-new-tab',
+  'shortcut-next-tab',
+  'shortcut-prev-tab',
+  'shortcut-reload-tab',
+  'shortcut-show-info',
+  'open-about-tab'
+];
+
+contextBridge.exposeInMainWorld('api', {
   send: (channel, data) => {
-    // Whitelist channels
-    const validChannels = ['tab-created', 'tab-closed', 'navigate-to-url', 'renderer-error', 'renderer-promise-rejection'];
-    if (validChannels.includes(channel)) {
+    if (validSendChannels.includes(channel)) {
       ipcRenderer.send(channel, data);
     }
   },
-  // Receive a message from the main process
+
   receive: (channel, func) => {
-    const validChannels = ['new-tab', 'close-tab', 'url-updated'];
-    if (validChannels.includes(channel)) {
-      // Deliberately strip event as it includes `sender` 
-      ipcRenderer.on(channel, (event, ...args) => func(...args));
+    if (validReceiveChannels.includes(channel)) {
+      const subscription = (event, ...args) => func(...args);
+      ipcRenderer.on(channel, subscription);
+      return () => ipcRenderer.removeListener(channel, subscription);
     }
   },
-  // Get the version of the application
-  getVersion: () => {
-    return process.env.npm_package_version;
-  }
-}; 
+
+  on: (channel, func) => {
+    if (validReceiveChannels.includes(channel)) {
+      const subscription = (event, ...args) => func(...args);
+      ipcRenderer.on(channel, subscription);
+      return () => ipcRenderer.removeListener(channel, subscription);
+    }
+  },
+
+  getVersion: () => ipcRenderer.invoke('get-app-version'),
+
+  openExternal: (url) => ipcRenderer.invoke('open-external-url', url),
+
+  toggleAlwaysOnTop: () => ipcRenderer.invoke('toggle-always-on-top'),
+
+  showAppInfo: () => ipcRenderer.invoke('show-app-info'),
+
+  fetchGrokRateLimits: () => ipcRenderer.invoke('fetch-grok-rate-limits'),
+
+  forceLightColorScheme: (wcId, shouldForceLight) =>
+    ipcRenderer.invoke('force-light-color-scheme', wcId, shouldForceLight)
+});
