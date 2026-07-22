@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, Menu, ipcMain, nativeTheme, session, webContents, dialog } = require('electron');
+const { app, BrowserWindow, shell, Menu, ipcMain, nativeTheme, session, webContents, dialog, clipboard } = require('electron');
 const os = require('os');
 const fs = require('fs');
 const { exec } = require('child_process');
@@ -135,6 +135,9 @@ ipcMain.handle('open-external-url', async (_event, url) => {
 let mainWindow;
 let aboutWindow;
 
+// Pasta atualmente selecionada (para segurança)
+let currentWorkingFolder = null;
+
 try { app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required'); } catch (_) {}
 
 const allowedUrlPatterns = [
@@ -220,6 +223,18 @@ function toggleAlwaysOnTopLinux(mainWindow) {
       }
     });
   });
+}
+
+// ===== Segurança de path =====
+function isPathSafe(filePath) {
+  if (!currentWorkingFolder || !filePath) return false;
+  try {
+    const resolved = path.resolve(filePath);
+    const base = path.resolve(currentWorkingFolder);
+    return resolved.startsWith(base + path.sep) || resolved === base;
+  } catch {
+    return false;
+  }
 }
 
 function createWindow() {
@@ -498,6 +513,201 @@ function setupIpcHandlers() {
       return false;
     }
   });
+
+  // ===== FOLDER ACCESS =====
+  ipcMain.handle('select-folder', async () => {
+    try {
+      const result = await dialog.showOpenDialog(mainWindow, {
+        properties: ['openDirectory'],
+        title: 'Selecionar pasta para o Grok'
+      });
+
+      if (result.canceled || !result.filePaths || result.filePaths.length === 0) {
+        return null;
+      }
+
+      currentWorkingFolder = result.filePaths[0];
+      return currentWorkingFolder;
+    } catch (error) {
+      console.error('Error selecting folder:', error);
+      return null;
+    }
+  });
+
+  ipcMain.handle('read-folder-structure', async (_event, folderPath) => {
+    try {
+      if (!folderPath || typeof folderPath !== 'string') {
+        return { error: 'Caminho inválido' };
+      }
+
+      currentWorkingFolder = folderPath;
+
+      const MAX_DEPTH = 3;
+      const MAX_FILES = 150;
+
+      function walk(dir, depth = 0) {
+        if (depth > MAX_DEPTH) return [];
+
+        let entries;
+        try {
+          entries = fs.readdirSync(dir, { withFileTypes: true });
+        } catch {
+          return [];
+        }
+
+        const result = [];
+        let count = 0;
+
+        for (const entry of entries) {
+          if (count >= MAX_FILES) {
+            result.push({ name: '...', type: 'truncated' });
+            break;
+          }
+
+          if (['node_modules', '.git', '.next', 'dist', 'build', '.cache', '__pycache__', '.vscode', '.idea'].includes(entry.name)) {
+            continue;
+          }
+
+          const fullPath = path.join(dir, entry.name);
+
+          if (entry.isDirectory()) {
+            result.push({
+              name: entry.name,
+              type: 'directory',
+              children: walk(fullPath, depth + 1)
+            });
+          } else {
+            result.push({
+              name: entry.name,
+              type: 'file'
+            });
+          }
+          count++;
+        }
+
+        return result;
+      }
+
+      const structure = walk(folderPath);
+
+      return {
+        path: folderPath,
+        structure
+      };
+    } catch (error) {
+      console.error('Error reading folder:', error);
+      return { error: error.message };
+    }
+  });
+
+  // ===== CLIPBOARD =====
+  ipcMain.handle('write-clipboard', (_event, text) => {
+    try {
+      clipboard.writeText(text);
+      return true;
+    } catch (e) {
+      console.error('Clipboard error:', e);
+      return false;
+    }
+  });
+
+  // ===== LER ARQUIVO =====
+  ipcMain.handle('read-file', async (_event, filePath) => {
+    try {
+      if (!isPathSafe(filePath)) {
+        return { error: 'Acesso negado: arquivo fora da pasta de trabalho' };
+      }
+
+      if (!fs.existsSync(filePath)) {
+        return { error: 'Arquivo não encontrado' };
+      }
+
+      const stats = fs.statSync(filePath);
+      if (stats.size > 500 * 1024) { // limite de 500KB
+        return { error: 'Arquivo muito grande (máximo 500KB)' };
+      }
+
+      const content = fs.readFileSync(filePath, 'utf8');
+      return {
+        path: filePath,
+        content,
+        size: stats.size
+      };
+    } catch (error) {
+      return { error: error.message };
+    }
+  });
+
+  // ===== ESCREVER ARQUIVO =====
+  ipcMain.handle('write-file', async (_event, filePath, content) => {
+    try {
+      if (!isPathSafe(filePath)) {
+        return { error: 'Acesso negado: arquivo fora da pasta de trabalho' };
+      }
+
+      // Criar pasta se não existir
+      const dir = path.dirname(filePath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+
+      fs.writeFileSync(filePath, content, 'utf8');
+      return { success: true, path: filePath };
+    } catch (error) {
+      return { error: error.message };
+    }
+  });
+
+  // ===== BUSCAR ARQUIVOS =====
+  ipcMain.handle('search-files', async (_event, folderPath, query) => {
+    try {
+      if (!folderPath || !query) {
+        return { error: 'Pasta ou termo de busca inválido' };
+      }
+
+      const results = [];
+      const MAX_RESULTS = 50;
+      const q = query.toLowerCase();
+
+      function search(dir, depth = 0) {
+        if (depth > 4 || results.length >= MAX_RESULTS) return;
+
+        let entries;
+        try {
+          entries = fs.readdirSync(dir, { withFileTypes: true });
+        } catch {
+          return;
+        }
+
+        for (const entry of entries) {
+          if (results.length >= MAX_RESULTS) break;
+
+          if (['node_modules', '.git', '.next', 'dist', 'build', '.cache', '__pycache__'].includes(entry.name)) {
+            continue;
+          }
+
+          const fullPath = path.join(dir, entry.name);
+
+          if (entry.isDirectory()) {
+            if (entry.name.toLowerCase().includes(q)) {
+              results.push({ path: fullPath, type: 'directory', name: entry.name });
+            }
+            search(fullPath, depth + 1);
+          } else {
+            // Busca no nome do arquivo
+            if (entry.name.toLowerCase().includes(q)) {
+              results.push({ path: fullPath, type: 'file', name: entry.name });
+            }
+          }
+        }
+      }
+
+      search(folderPath);
+      return { results, query };
+    } catch (error) {
+      return { error: error.message };
+    }
+  });
 }
 
 function setupContextMenus() {
@@ -576,7 +786,6 @@ function setupContextMenus() {
   });
 }
 
-// ===== SECURE PERMISSIONS (origin-aware) =====
 function setupPermissions() {
   const isAllowedOrigin = (url) => {
     if (!url || typeof url !== 'string') return false;

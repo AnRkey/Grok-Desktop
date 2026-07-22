@@ -45,15 +45,20 @@ contextBridge.exposeInMainWorld('api', {
   },
 
   getVersion: () => ipcRenderer.invoke('get-app-version'),
-
   openExternal: (url) => ipcRenderer.invoke('open-external-url', url),
-
   toggleAlwaysOnTop: () => ipcRenderer.invoke('toggle-always-on-top'),
-
   showAppInfo: () => ipcRenderer.invoke('show-app-info'),
-
   fetchGrokRateLimits: () => ipcRenderer.invoke('fetch-grok-rate-limits'),
-
   forceLightColorScheme: (wcId, shouldForceLight) =>
-    ipcRenderer.invoke('force-light-color-scheme', wcId, shouldForceLight)
+    ipcRenderer.invoke('force-light-color-scheme', wcId, shouldForceLight),
+
+  // ===== Pasta e arquivos =====
+  selectFolder: () => ipcRenderer.invoke('select-folder'),
+  readFolderStructure: (folderPath) => ipcRenderer.invoke('read-folder-structure', folderPath),
+  writeClipboard: (text) => ipcRenderer.invoke('write-clipboard', text),
+
+  // Novas funções
+  readFile: (filePath) => ipcRenderer.invoke('read-file', filePath),
+  writeFile: (filePath, content) => ipcRenderer.invoke('write-file', filePath, content),
+  searchFiles: (folderPath, query) => ipcRenderer.invoke('search-files', folderPath, query)
 });
