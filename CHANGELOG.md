@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [1.3.0] - 2026-07-22
+
+### Security
+- **Critical hardening**: Disabled `nodeIntegration` and enabled `contextIsolation` + `sandbox` on the main BrowserWindow
+- Completely rewrote `preload.js` using `contextBridge` (removed direct Node access from renderer)
+- Made permission handlers origin-aware (only allow media/display-capture for trusted domains: grok.com, x.ai, accounts.google.com, appleid.apple.com, etc.)
+- Added explicit security attributes on webviews (`nodeintegration=false`, `contextisolation=true`)
+- Updated Electron from 39.1.2 → **43.2.0** (latest stable with many security fixes)
+- Fixed license inconsistency in `package.json` (now correctly set to GPL-2.0)
+
+### Changed
+- Replaced all `require('electron')` and direct `ipcRenderer` usage in `index.html` with the secure `window.api` bridge
+- Replaced Node `https` module with native `fetch` for update checking
+- Improved overall security posture while keeping full feature compatibility
+
+### Fixed
+- Maintained all existing functionality (tabs, AOT, usage stats, OAuth, shortcuts, theme, etc.) after the security refactor
 
 ## [1.2.5] - 2025-12-17
 
@@ -28,6 +45,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 - Bump version to 1.2.4
+
 ## [1.2.3] - 2025-11-08
 
 ### Added
@@ -46,25 +64,6 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 - Bump version to 1.2.2
-
-## [Unreleased]
-
-### Added
-- Keyboard shortcuts in the app:
-  - Ctrl+T: open new tab
-  - Ctrl+Tab / Ctrl+Shift+Tab: cycle through open tabs (next/previous)
-  - Ctrl+R reloads the active tab
-  - Ctrl+I: open information/about dialog
-### Changed
-- Update Electron to 39.x (incrementally 36 → 37 → 38 → 39)
-- Use electron-builder via npx in npm scripts (no global install required)
-
-### Removed
-- Remove unused dependency: electron-store
-- Remove `brace-expansion` overrides after verification
-
-### Security
-- Verified `brace-expansion` advisories (CVE-2025-5889); ensured no affected versions in tree
 
 ## [1.2.1] - 2025-08-16
 
@@ -98,7 +97,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ### Added
 - Initial pre-release of Grok Desktop
 
- [Unreleased]: https://github.com/AnRkey/Grok-Desktop/compare/v1.2.5...HEAD
+[1.3.0]: https://github.com/AnRkey/Grok-Desktop/compare/v1.2.5...v1.3.0
 [1.2.5]: https://github.com/AnRkey/Grok-Desktop/releases/tag/v1.2.5
 [1.2.4]: https://github.com/AnRkey/Grok-Desktop/releases/tag/v1.2.4
 [1.2.3]: https://github.com/AnRkey/Grok-Desktop/releases/tag/v1.2.3
@@ -107,5 +106,3 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 [1.2.0]: https://github.com/AnRkey/Grok-Desktop/releases/tag/v1.2.0
 [1.1.0]: https://github.com/AnRkey/Grok-Desktop/releases/tag/v1.1.0
 [1.0.0-pre]: https://github.com/AnRkey/Grok-Desktop/releases/tag/v1.0.0-pre
-
-
