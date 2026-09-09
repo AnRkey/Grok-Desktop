@@ -4,32 +4,38 @@ const os = require('os');
 const fs = require('fs');
 const { exec } = require('child_process');
 
+try { app.setName('Grok Desktop'); } catch (_) {}
+
 // GPU acceleration detection and graceful fallback
 function configureGpuAcceleration() {
-  // Check if we're in a headless environment or container
-  const isHeadless = !process.env.DISPLAY && !process.env.WAYLAND_DISPLAY;
-  const isContainer = fs.existsSync('/.dockerenv') || process.env.container === 'docker';
+  // Linux-only headless/container/device probes. Missing DISPLAY/WAYLAND_DISPLAY
+  // or /dev/dri on darwin/win32 is normal and must not disable GPU.
+  let isHeadless = false;
+  let isContainer = false;
+  let hasGpu = true;
 
-  // Check for NVIDIA/AMD GPU availability (basic detection)
-  let hasGpu = false;
-  try {
-    // Check for NVIDIA GPU
-    if (fs.existsSync('/dev/nvidia0') || process.env.NVIDIA_VISIBLE_DEVICES) {
-      hasGpu = true;
+  if (os.platform() === 'linux') {
+    isHeadless = !process.env.DISPLAY && !process.env.WAYLAND_DISPLAY;
+    isContainer = fs.existsSync('/.dockerenv') || process.env.container === 'docker';
+
+    hasGpu = false;
+    try {
+      if (fs.existsSync('/dev/nvidia0') || process.env.NVIDIA_VISIBLE_DEVICES) {
+        hasGpu = true;
+      }
+      if (fs.existsSync('/dev/dri/card0')) {
+        hasGpu = true;
+      }
+    } catch (e) {
+      // Ignore errors in GPU detection
     }
-    // Check for AMD GPU
-    if (fs.existsSync('/dev/dri/card0')) {
-      hasGpu = true;
-    }
-  } catch (e) {
-    // Ignore errors in GPU detection
   }
 
   // Disable GPU acceleration if:
-  // 1. In headless environment
-  // 2. In container without GPU passthrough
-  // 3. No GPU detected
-  // 4. Explicitly requested via environment variable
+  // 1. In headless environment (Linux)
+  // 2. In container without GPU passthrough (Linux)
+  // 3. No GPU detected (Linux)
+  // 4. Explicitly requested via environment variable (all platforms)
   const shouldDisableGpu = isHeadless || (isContainer && !hasGpu) || !hasGpu || process.env.GROK_DISABLE_GPU === 'true';
 
   if (shouldDisableGpu) {
@@ -223,7 +229,7 @@ if (!gotSingleInstanceLock) {
 const forcedLightWebContentsIds = new Set();
 
 // Always On Top (AOT) functionality for cross-platform compatibility
-// Windows: Uses Electron's built-in setAlwaysOnTop() method
+// Windows/macOS: Uses Electron's built-in setAlwaysOnTop() method
 // Linux: Uses wmctrl command-line tool for better GNOME/Wayland compatibility
 // If running under Wayland on Linux, automatically restarts with X11 forced
 
@@ -298,6 +304,47 @@ function toggleAlwaysOnTopLinux(mainWindow) {
   });
 }
 
+function createApplicationMenu() {
+  if (process.platform !== 'darwin') {
+    Menu.setApplicationMenu(null);
+    return;
+  }
+
+  const template = [
+    {
+      label: app.name,
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        { role: 'services' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' }
+      ]
+    },
+    { role: 'editMenu' },
+    {
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { role: 'toggleDevTools' },
+        { type: 'separator' },
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' }
+      ]
+    },
+    { role: 'windowMenu' }
+  ];
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
 function createWindow() {
   // Create the browser window
   mainWindow = new BrowserWindow({
@@ -314,8 +361,10 @@ function createWindow() {
     icon: path.join(__dirname, 'grok.png')
   });
 
-  // Disable the menu bar
-  Menu.setApplicationMenu(null);
+  createApplicationMenu();
+  if (process.platform === 'darwin' && app.dock) {
+    try { app.dock.setIcon(path.join(__dirname, 'grok.png')); } catch (_) {}
+  }
 
   // Ensure shortcuts work when focus is on the main window UI
   try { attachShortcutHandlers(mainWindow.webContents); } catch (_) {}
@@ -398,7 +447,7 @@ function createWindow() {
   // Enable right-click context menus
   setupContextMenus();
 
-  // Set up keyboard shortcuts (Ctrl+T, Ctrl+Tab, Ctrl+R)
+  // Set up keyboard shortcuts (Ctrl/Cmd+T, Ctrl+Tab, Ctrl/Cmd+R)
   setupKeyboardShortcuts();
 
   // Ensure newly created webContents/webviews get correct color scheme
@@ -754,8 +803,8 @@ function attachShortcutHandlers(contents) {
   try {
     contents.on('before-input-event', (event, input) => {
       try {
-        // Only handle keyDown with Control on Windows/Linux
-        if (input.type !== 'keyDown' || !input.control) return;
+        // Control (Windows/Linux/Mac) or Command (Mac). Ctrl remains an alias on Mac.
+        if (input.type !== 'keyDown' || !(input.control || input.meta)) return;
 
         const key = input.key;
         // Deliver to the hosting window (handles webviews as well)
@@ -763,37 +812,34 @@ function attachShortcutHandlers(contents) {
         const win = BrowserWindow.fromWebContents(host);
         if (!win || win.isDestroyed()) return;
 
-        // Ctrl+K -> Remap to Ctrl+Shift+K for grok.com search
-        // grok.com responds to Ctrl+Shift+K, not Ctrl+K (which Chromium intercepts for omnibox)
+        // Ctrl/Cmd+K -> Remap to Ctrl/Cmd+Shift+K for grok.com search
         if ((key === 'k' || key === 'K') && !input.shift) {
           event.preventDefault();
-          // Send Ctrl+Shift+K to the webContents using sendInputEvent (creates trusted OS-level events)
+          const searchModifiers = input.control ? ['control', 'shift'] : ['meta', 'shift'];
           contents.sendInputEvent({
             type: 'keyDown',
             keyCode: 'K',
-            modifiers: ['control', 'shift']
+            modifiers: searchModifiers
           });
-          // Send keyUp after a short delay
           setTimeout(() => {
             try {
               contents.sendInputEvent({
                 type: 'keyUp',
                 keyCode: 'K',
-                modifiers: ['control', 'shift']
+                modifiers: searchModifiers
               });
             } catch (_) {}
           }, 10);
           return;
         }
-        // Don't intercept Ctrl+Shift+K - let it pass through naturally (it already works)
 
-        // Ctrl+T -> new tab
+        // Ctrl/Cmd+T -> new tab
         if (key === 't' || key === 'T') {
           event.preventDefault();
           win.webContents.send('shortcut-new-tab');
           return;
         }
-        // Ctrl+Tab -> next tab, Ctrl+Shift+Tab -> previous tab
+        // Ctrl+Tab / Ctrl+Shift+Tab cycle tabs (Cmd+Tab is the macOS app switcher)
         if (key === 'Tab') {
           event.preventDefault();
           if (input.shift) {
@@ -803,13 +849,13 @@ function attachShortcutHandlers(contents) {
           }
           return;
         }
-        // Ctrl+R -> reload active tab (override default window reload)
+        // Ctrl/Cmd+R -> reload active tab (override default window reload)
         if (key === 'r' || key === 'R') {
           event.preventDefault();
           win.webContents.send('shortcut-reload-tab');
           return;
         }
-        // Ctrl+I -> show information/about dialog
+        // Ctrl/Cmd+I -> show information/about dialog
         if (key === 'i' || key === 'I') {
           event.preventDefault();
           win.webContents.send('shortcut-show-info');
