@@ -757,9 +757,9 @@
             // Only handle if we're over the tabs area (not scroll buttons)
             if (e.target.closest('.tabs-scroll')) return;
 
-            // Check if Ctrl is pressed for tab switching
-            if (e.ctrlKey) {
-              // Ctrl + scroll = switch tabs
+            // Check if Ctrl or Command is pressed for tab switching
+            if (e.ctrlKey || e.metaKey) {
+              // Ctrl/Cmd + scroll = switch tabs
               e.preventDefault(); // Prevent any default behavior
               if (e.deltaY > 0) {
                 // Scroll down = next tab

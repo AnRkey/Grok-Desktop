@@ -14,7 +14,9 @@
     "build-rpm": "npx --yes electron-builder@latest --linux rpm",
     "build-deb": "npx --yes electron-builder@latest --linux deb",
     "build-rpm-deb": "npx --yes electron-builder@latest --linux rpm deb",
-    "build-all": "npx --yes electron-builder@latest --win --x64 --linux"
+    "build-mac": "npx --yes electron-builder@latest --mac dmg zip",
+    "build-mac-app": "CSC_IDENTITY_AUTO_DISCOVERY=false npx --yes electron-builder@latest --mac dir",
+    "build-all": "npx --yes electron-builder@latest --win --x64 --linux --mac"
   },
   "keywords": [
     "electron",
@@ -40,6 +42,25 @@
     "productName": "Grok Desktop",
     "directories": {
       "output": "build"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.productivity",
+      "icon": "build-resources/icons",
+      "identity": null,
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "Grok Desktop needs the microphone for Grok speech mode.",
+        "NSCameraUsageDescription": "Grok Desktop needs the camera when Grok requests video."
+      },
+      "artifactName": "Grok-Desktop-v${version}-${arch}.${ext}"
+    },
+    "dmg": {
+      "artifactName": "Grok-Desktop-v${version}-${arch}.${ext}"
     },
     "linux": {
       "target": [

@@ -1,7 +1,7 @@
 # Grok-Desktop v1.2.5
 
 ## Description
-Grok-Desktop is an Electron-based desktop application for Windows 10/11 and Linux that wraps `grok.com`, providing desktop-application-like access to Grok with real-time API usage monitoring, multi-tab support, and seamless authentication for xAI, Google, and Apple accounts.
+Grok-Desktop is an Electron-based desktop application for Windows 10/11, Linux, and macOS that wraps `grok.com`, providing desktop-application-like access to Grok with real-time API usage monitoring, multi-tab support, and seamless authentication for xAI, Google, and Apple accounts.
 
 ## Screenshot
 ![Screenshot](screenshot.png)
@@ -15,15 +15,15 @@ Grok-Desktop is an Electron-based desktop application for Windows 10/11 and Linu
   - **Grok 4 Heavy**: Specialized model usage limits
   - **Refill Timer**: Shows when limits reset
 - **Keyboard shortcuts**:
-  - `Ctrl+T`: Open a new tab
-  - `Ctrl+Tab` / `Ctrl+Shift+Tab`: Cycle through open tabs (next/previous)
+  - `Ctrl+T` / `Cmd+T`: Open a new tab
+  - `Ctrl+Tab` / `Ctrl+Shift+Tab`: Cycle through open tabs (next/previous). `Ctrl+Tab` also works on macOS; `Cmd+Tab` is the system app switcher
   - `Mouse-wheel-scroll`: Scroll open tabs when they are overflowing on the tab bar
-  - `Ctrl+Mouse-wheel-scroll`: Cycle through open tabs (next/previous)
-  - `Ctrl+R`: Reload the active tab
-  - `Ctrl+I`: Show information/about dialog
+  - `Ctrl+Mouse-wheel-scroll` / `Cmd+Mouse-wheel-scroll`: Cycle through open tabs (next/previous)
+  - `Ctrl+R` / `Cmd+R`: Reload the active tab
+  - `Ctrl+I` / `Cmd+I`: Show information/about dialog
 - **Authentication support** for xAI, Google, and Apple accounts
-- **Clean interface** with no menu bar for distraction-free usage
-- **Always-on-top function** with cross-platform support (Windows & Linux)
+- **Clean interface** with no menu bar on Windows/Linux; macOS uses the standard application menu
+- **Always-on-top function** with cross-platform support (Windows, Linux, and macOS)
 - **Dark/Light mode support** with system theme detection
 - **Grok speech mode** support
 - **Enhanced security** with domain validation and OAuth protection
@@ -45,15 +45,16 @@ Grok-Desktop is an Electron-based desktop application for Windows 10/11 and Linu
 ## System Requirements
 
 ### For Using the Application
-- **Operating System**: Windows 10/11 or Linux (Rocky Linux 9/10, RHEL 9, Ubuntu, Fedora, etc.)
+- **Operating System**: Windows 10/11, macOS 11+, or Linux (Rocky Linux 9/10, RHEL 9, Ubuntu, Fedora, etc.)
 - **Internet connection** for accessing grok.com
 - **Grok account** (sign up in-app or use Google/Apple/xAI authentication)
 - **Linux AOT (Always-on-Top) requirement**: Install `wmctrl` for Always-on-Top functionality:
   - Rocky Linux/RHEL/Fedora: `sudo dnf install wmctrl`
   - Ubuntu/Debian: `sudo apt install wmctrl`
+- **macOS AOT**: Uses Electron `setAlwaysOnTop` (no extra packages)
 
 ### For Building from Source
-- **Operating System**: Windows 10/11 or Linux
+- **Operating System**: Windows 10/11, macOS 11+, or Linux
 - **Node.js**: LTS version (20.x recommended)
 - **Internet connection** for downloading dependencies
 
@@ -66,7 +67,7 @@ Grok-Desktop/
 │   ├── renderer.js        # Renderer process code
 │   ├── custom-tabs.js     # Custom tabs implementation
 │   ├── grok.ico           # Windows application icon
-│   └── grok.png           # Linux application icon
+│   └── grok.png           # Linux/macOS application icon
 ├── assets/                # Static assets
 │   ├── icon.png
 │   └── icon.svg
@@ -80,6 +81,7 @@ Grok-Desktop/
 ├── about.html            # About dialog HTML
 ├── package.json          # Node.js dependencies and build config
 ├── build.bat             # Windows build script
+├── build-macos.sh        # macOS build/launch script
 ├── build-linux.sh        # Linux build script
 ├── CHANGELOG.md          # Version history and changes
 ├── LINUX_BUILD_GUIDE.md  # Detailed Linux build instructions
@@ -87,39 +89,6 @@ Grok-Desktop/
 └── README.md            # This file
 ```
 
-<<<<<<< HEAD
-## Build Grok-Desktop
-1. Install Node.js from [nodejs.org](https://nodejs.org/).
-2. Clone this repository or download the files.
-3. Install dependencies if needed: `npm install`
-4. Build using npm scripts:
-   - Directory build (unpacked): `npm run build-dir`
-   - Portable executable: `npm run build-portable`
-   - Full installers (NSIS + MSI): `npm run build-installer`
-
-Notes:
-- These scripts use `npx electron-builder@latest` (no global install required).
-- All build outputs are written to the `build` directory.
-
-## Usage
-- After building, install `Grok-Desktop` with `Grok-Desktop_Installer-v1.2.3.exe` from the `build` directory
-- Launch `Grok-Desktop` from the Start Menu
-- Log in via `grok.com`, using Google, Apple, or xAI authentication as needed.
-- Use the + button in the top toolbar (or Ctrl+T) to add new tabs.
-- Click the AOT button in the top right to toggle always-on-top functionality.
-- Use keyboard shortcuts to work faster:
-  - Ctrl+T: Open a new tab
-  - Ctrl+Tab / Ctrl+Shift+Tab: Cycle through open tabs (next/previous)
-  - Ctrl+R: Reload the currently active tab
-  - Ctrl+I: Show information/about dialog
-
-## Keyboard Shortcuts
-- Ctrl+T: Open a new tab
-- Ctrl+Tab: Switch to the next tab
-- Ctrl+Shift+Tab: Switch to the previous tab
-- Ctrl+R: Reload the active tab (does not reload the entire app window)
-- Ctrl+I: Show information/about dialog
-=======
 ## Building from Source
 
 ### Prerequisites
@@ -128,8 +97,12 @@ Notes:
 3. Navigate to the project: `cd Grok-Desktop`
 4. Install dependencies: `npm install`
 
+### Run from source
+```bash
+npm start
+```
+
 ### Build Commands
->>>>>>> development
 
 #### Windows
 ```bash
@@ -143,6 +116,26 @@ npm run build-portable
 npm run build-dir
 ```
 
+#### macOS
+```bash
+# Run from source
+npm start
+
+# Build Grok Desktop.app and launch it
+./build-macos.sh --launch
+# or: npm run build-mac-app
+
+# Unsigned DMG + ZIP
+./build-macos.sh --dmg
+# or: npm run build-mac
+```
+
+The `.app` lands in `build/mac-arm64/Grok Desktop.app` on Apple Silicon (`build/mac/Grok Desktop.app` on Intel). It is unsigned (`identity` is null). `build-macos.sh --launch` clears the quarantine flag; a Finder launch may still need right-click **Open** the first time:
+
+```bash
+xattr -cr "build/mac-arm64/Grok Desktop.app"
+```
+
 #### Linux
 ```bash
 # RPM + AppImage packages
@@ -151,7 +144,7 @@ npm run build-linux
 # RPM only for RHEL/Rocky Linux
 npm run build-rhel
 
-# All platforms (Windows + Linux)
+# All platforms (Windows + Linux + macOS)
 npm run build-all
 ```
 
@@ -174,6 +167,15 @@ npm run build-all
 cd build
 sudo dnf install ./Grok-Desktop-v1.2.5.x86_64.rpm
 ```
+
+### macOS
+Prebuilt macOS binaries are not published on GitHub Releases yet. From this repo:
+
+```bash
+./build-macos.sh --launch
+```
+
+If Gatekeeper blocks a Finder launch, right-click and choose **Open**, or run `xattr -cr` on the app bundle.
 
 ## Usage Guide
 
@@ -220,15 +222,16 @@ Thanks to Joshua Wang for his code.
 ### Keyboard Shortcuts
 | Shortcut | Action |
 |----------|--------|
-| `Ctrl+T` | Open a new tab |
-| `Ctrl+Tab` | Switch to next tab |
-| `Ctrl+Shift+Tab` | Switch to previous tab |
-| `Ctrl+R` | Reload active tab |
-| `Ctrl+I` | Show information/about dialog |
+| `Ctrl+T` / `Cmd+T` | Open a new tab |
+| `Ctrl+Tab` / `Ctrl+Shift+Tab` | Switch to next/previous tab (`Ctrl+Tab` works on macOS; `Cmd+Tab` is the system app switcher) |
+| `Ctrl+R` / `Cmd+R` | Reload active tab |
+| `Ctrl+I` / `Cmd+I` | Show information/about dialog |
+| `Ctrl+scroll` / `Cmd+scroll` | Cycle tabs when hovering the tab bar |
 
 ### Always-on-Top Feature
 - Click the **AOT** button to toggle always-on-top mode
 - The button turns green when active
+- On Windows and macOS, uses Electron `setAlwaysOnTop()`
 - On Linux, requires `wmctrl` package (automatically handled)
 
 ## Support & Troubleshooting
@@ -335,6 +338,10 @@ Cross-platform always-on-top functionality with automatic compatibility handling
 #### Windows Implementation
 - Uses Electron's built-in `BrowserWindow.setAlwaysOnTop()` method
 - Native Windows API integration
+
+#### macOS Implementation
+- Uses Electron's built-in `BrowserWindow.setAlwaysOnTop()` method
+- No extra packages required
 
 #### Linux Implementation
 - **Primary**: Uses `wmctrl` command-line tool for reliable window management
