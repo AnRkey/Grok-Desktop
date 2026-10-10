@@ -30,7 +30,8 @@ function configureGpuAcceleration() {
   // 2. In container without GPU passthrough
   // 3. No GPU detected
   // 4. Explicitly requested via environment variable
-  const shouldDisableGpu = isHeadless || (isContainer && !hasGpu) || !hasGpu || process.env.GROK_DISABLE_GPU === 'true';
+  const isLinux = process.platform === 'linux';
+  const shouldDisableGpu = process.env.GROK_DISABLE_GPU === 'true' || (isLinux && (isHeadless || (isContainer && !hasGpu)));
 
   if (shouldDisableGpu) {
     console.log('Grok Desktop: Disabling GPU acceleration for compatibility');
