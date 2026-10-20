@@ -345,7 +345,7 @@
     <div class="app-controls">
   <div id="update-indicator" style="margin-right:8px;font-size:12px;opacity:0.9;cursor:pointer;text-decoration:underline;display:none;"></div>
   <button class="reload-button" id="reload-button" title="Reload current tab"><span class="reload-icon">↻</span></button>
-  <button class="aot-button" id="aot-button" title="Always on top">AOT</button>
+  <button class="aot-button" id="aot-button" title="Always on top (off by default; when on, other apps cannot cover this window)">AOT</button>
   <button class="aot-button" id="update-btn" style="margin-left:8px;display:none;background:#ff3333;color:#fff;border-color:#cc0000;" title="Update available">↑</button>
   <button class="aot-button" id="usage-btn" style="margin-left:8px;" title="Toggle Usage Stats">s</button>
   <button class="aot-button" id="info-btn" style="margin-left:8px;" title="About">i</button>
@@ -488,18 +488,25 @@
           }
         });
         
-        // Set up AOT button
+        // Set up AOT button (default off; only on when user opts in)
         const aotButton = document.getElementById('aot-button');
+        const syncAotButton = (isAlwaysOnTop) => {
+          if (isAlwaysOnTop) {
+            aotButton.classList.add('active');
+          } else {
+            aotButton.classList.remove('active');
+          }
+          try { localStorage.setItem('grokDesktopAot', String(!!isAlwaysOnTop)); } catch (e) {}
+        };
         aotButton.addEventListener('click', () => {
-          // Use IPC to communicate with the main process
           ipcRenderer.invoke('toggle-always-on-top').then((isAlwaysOnTop) => {
-            if (isAlwaysOnTop) {
-              aotButton.classList.add('active');
-            } else {
-              aotButton.classList.remove('active');
-            }
+            syncAotButton(isAlwaysOnTop);
           });
         });
+        // Force UI to match process state (main process starts with AOT off)
+        ipcRenderer.invoke('get-always-on-top').then((isAlwaysOnTop) => {
+          syncAotButton(!!isAlwaysOnTop);
+        }).catch(() => syncAotButton(false));
         
         // Create initial tab
         this.createTab('https://grok.com');

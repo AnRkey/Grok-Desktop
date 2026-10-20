@@ -314,6 +314,9 @@ function createWindow() {
     icon: path.join(__dirname, 'grok.png')
   });
 
+  // Never launch pinned above other apps (user can opt in via AOT)
+  try { mainWindow.setAlwaysOnTop(false); } catch (_) {}
+
   // Disable the menu bar
   Menu.setApplicationMenu(null);
 
@@ -458,6 +461,12 @@ function setupUrlHandling() {
 // Set up IPC handlers for renderer-to-main process communication
 function setupIpcHandlers() {
   // Handle always-on-top toggle
+  // Read current always-on-top state
+  ipcMain.handle('get-always-on-top', () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return false;
+    try { return mainWindow.isAlwaysOnTop(); } catch (_) { return false; }
+  });
+
   ipcMain.handle('toggle-always-on-top', async () => {
     if (!mainWindow) return false;
 
