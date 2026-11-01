@@ -3,6 +3,9 @@
 ## Description
 Grok-Desktop is an Electron-based desktop application for Windows 10/11 and Linux that wraps `grok.com`, providing desktop-application-like access to Grok with real-time API usage monitoring, multi-tab support, and authentication for xAI/X, Google, Apple and GitHub accounts.
 
+## Sponsor
+Development of Grok-Desktop is sponsored by [Firmicom](https://www.firmicom.com/). See the [Grok Desktop product page](https://www.firmicom.com/grok-desktop/) for an overview and live download statistics.
+
 ## Screenshot
 ![Screenshot](screenshot.png)
 
@@ -386,6 +389,9 @@ This project is licensed under the GNU General Public License version 2.0 (GPL-2
 - **Releases**: [GitHub Releases](https://github.com/AnRkey/Grok-Desktop/releases)
 
 ## Acknowledgments
+
+### Sponsor
+- **[Firmicom](https://www.firmicom.com/grok-desktop/)**: sponsors the development of Grok-Desktop
 
 ### Third-Party Components
 - **Electron**: Cross-platform desktop app framework
