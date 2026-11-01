@@ -5,6 +5,8 @@ const fs = require('fs');
 const { execFile } = require('child_process');
 const { pathToFileURL } = require('url');
 const { isInternalUrl, isGrokUrl, isExternalUrl, shouldDisableGpu } = require('./url-policy');
+const { startAuthNavigationTrace } = require('./auth-navigation-trace');
+let recordAuthNavigation = () => {};
 
 // GPU acceleration detection and graceful fallback
 function configureGpuAcceleration() {
@@ -116,6 +118,7 @@ function handleTrusted(channel, handler) {
 
 async function openExternalUrl(url) {
   if (!isExternalUrl(url)) return false;
+  recordAuthNavigation({ kind: 'external-browser', url });
   try { await shell.openExternal(url); return true; }
   catch (_) { return false; }
 }
@@ -324,6 +327,9 @@ function createWindow() {
 
 // Create window when Electron has finished initialization
 app.whenReady().then(() => {
+  if (app.commandLine.hasSwitch('trace-auth-navigation')) {
+    recordAuthNavigation = startAuthNavigationTrace(app, path.join(app.getPath('userData'), 'auth-navigation.jsonl'));
+  }
   setupUrlHandling();
   setupIpcHandlers();
   setupPermissions();
@@ -363,15 +369,25 @@ function setupUrlHandling() {
       preferences.sandbox = true;
       preferences.webSecurity = true;
     });
-    const guardNavigation = (event, url) => {
+    const guardNavigation = (isRedirect) => (event, legacyUrl, _sameDocument, legacyMainFrame) => {
+      const url = event.url || legacyUrl;
+      const isMainFrame = event.isMainFrame ?? legacyMainFrame ?? true;
+      // Provider cookie/check-connection iframes remain in the browser session.
+      // A subframe redirect must never launch a user's external browser.
+      if (!isMainFrame) return;
       if (contents === mainWindow?.webContents || !isInternalUrl(url)) {
         event.preventDefault();
-        if (contents !== mainWindow?.webContents) void openExternalUrl(url);
+        recordAuthNavigation({ kind: isRedirect ? 'blocked-redirect' : 'blocked-navigation', contents: contents.id, url });
+        // An automatic redirect can contain OAuth state or cookie handoffs.
+        // Block unknown destinations in place; only direct navigation opens
+        // external links in the OS browser.
+        if (!isRedirect && contents !== mainWindow?.webContents) void openExternalUrl(url);
       }
     };
-    contents.on('will-navigate', guardNavigation);
-    contents.on('will-redirect', guardNavigation);
+    contents.on('will-navigate', guardNavigation(false));
+    contents.on('will-redirect', guardNavigation(true));
     contents.setWindowOpenHandler(({ url }) => {
+      recordAuthNavigation({ kind: 'popup-request', contents: contents.id, url });
       if (isGrokUrl(url)) {
         mainWindow?.webContents.send('open-internal-tab', url, true);
         return { action: 'deny' };

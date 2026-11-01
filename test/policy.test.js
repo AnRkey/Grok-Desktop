@@ -25,6 +25,25 @@ test('OS browser routing rejects schemes, credentials, local names and numeric h
   }
 });
 
+test('Google and Grok cookie handoffs stay internal with an exact host/path allowlist', () => {
+  for (const url of [
+    'https://accounts.youtube.com/accounts/SetSID?test=dummy',
+    'https://accounts.youtube.com/accounts/CheckConnection',
+    'https://accounts.google.co.za/accounts/SetSID?test=dummy',
+    'https://accounts.google.co.uk/accounts/CheckConnection',
+    'https://auth.grok.com/set-cookie?test=dummy',
+    'https://accounts.google.com/signin/oauth/legacy/consent?test=dummy'
+  ]) assert.equal(isInternalUrl(url), true, url);
+  for (const url of [
+    'https://accounts.youtube.com/watch', 'https://auth.grok.com/untrusted',
+    'https://auth.grok.com/set-cookie/extra', 'https://auth.grok.com.evil.org/set-cookie',
+    'https://accounts.youtube.com.evil.org/accounts/SetSID',
+    'https://accounts.google.co.za/other', 'https://accounts.google.fake/accounts/SetSID',
+    'https://accounts.google.co.za.evil.org/accounts/SetSID',
+    'http://auth.grok.com/set-cookie', 'https://auth.grok.com:444/set-cookie'
+  ]) assert.equal(isInternalUrl(url), false, url);
+});
+
 test('GPU detection preserves Windows/macOS acceleration and explicit fallback', () => {
   for (const platform of ['win32', 'darwin']) {
     assert.equal(shouldDisableGpu(platform, {}, () => false), false);

@@ -146,6 +146,46 @@ const path = require('node:path');
     assert.equal(auth.node, false);
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().filter(win => win.webContents.getURL().startsWith('https:')).forEach(win => win.close()));
 
+    // Replay the redacted manual navigation sequence into the installed main
+    // handlers. Keep all real-account traffic out of this offline test.
+    const navigation = await app.evaluate(({ shell, webContents }) => {
+      const original = shell.openExternal;
+      const external = [];
+      shell.openExternal = async url => { external.push(url); };
+      const guest = webContents.getAllWebContents().find(wc => wc.getType() === 'webview');
+      const emit = (kind, url, mainFrame = true, legacy = false) => {
+        let prevented = false;
+        const event = { preventDefault() { prevented = true; } };
+        if (!legacy) Object.assign(event, { url, isMainFrame: mainFrame });
+        guest.emit(kind, event, url, false, mainFrame);
+        return prevented;
+      };
+      try {
+        const chain = [
+          'https://accounts.google.com/CheckCookie?test=dummy',
+          'https://accounts.youtube.com/accounts/SetSID?test=dummy',
+          'https://accounts.google.co.za/accounts/SetSID?test=dummy',
+          'https://accounts.google.com/signin/oauth/legacy/consent?test=dummy',
+          'https://grok.com/api/auth/oauth/callback?test=dummy',
+          'https://auth.grok.com/set-cookie?test=dummy'
+        ];
+        const modern = chain.map(url => emit('will-redirect', url));
+        const legacy = chain.map(url => emit('will-redirect', url, true, true));
+        const frame = emit('will-redirect', 'https://example.org/frame-redirect', false);
+        const unknown = emit('will-redirect', 'https://unknown.example.org/blocked?test=dummy');
+        const noEscapedRedirect = external.length === 0;
+        const direct = emit('will-navigate', 'https://example.org/article');
+        return { modern, legacy, frame, unknown, noEscapedRedirect, direct, external };
+      } finally { shell.openExternal = original; }
+    });
+    assert.deepEqual(navigation.modern, Array(6).fill(false));
+    assert.deepEqual(navigation.legacy, Array(6).fill(false));
+    assert.equal(navigation.frame, false);
+    assert.equal(navigation.unknown, true);
+    assert.equal(navigation.noEscapedRedirect, true);
+    assert.equal(navigation.direct, true);
+    assert.deepEqual(navigation.external, ['https://example.org/article']);
+
     await page.locator('#info-btn').click();
     await page.waitForFunction(() => document.querySelectorAll('.tab').length === 3 && document.querySelector('.tab.active .tab-title').textContent === 'About');
     await app.evaluate(async ({ webContents }) => {
@@ -159,7 +199,7 @@ const path = require('node:path');
     console.log(JSON.stringify({ result: 'PASS', executablePath, version,
       checks: ['sandbox/isolation', 'AOT off/on/off', 'background search tab', 'unique tabs', 'Ctrl+T and close',
         'authenticated stats', 'viewport fit', 'unsafe URL blocking', 'media consent denial/allow', 'Inspect Element',
-        'OAuth popup session', 'About version', 'no renderer errors'] }, null, 2));
+        'OAuth popup session', 'Google cookie handoffs', 'subframe redirect stays embedded', 'unknown redirect never escapes', 'About version', 'no renderer errors'] }, null, 2));
   } finally {
     await app.close();
   }

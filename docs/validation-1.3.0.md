@@ -66,3 +66,16 @@ After John explicitly approves, use the exact previous release template saved at
 - `Grok-Desktop_Windows-v1.3.0.zip`: `30f795f2135ae165d1300831c83d58b6417a796d529c6f28ff3456943ba2f9f5`
 
 These checksums identify the local Windows build; CI rebuilds may have different hashes because installer timestamps differ.
+
+
+## Google login follow-up installer (1 November 2026)
+
+The earlier 1.3.0 artifacts above predate this Google login fix. Manual packaged testing identified escaped cookie handoffs at `accounts.youtube.com/accounts/SetSID` and `auth.grok.com/set-cookie`. The first fixed package then stopped after verification at the regional `accounts.google.co.za/accounts/SetSID` endpoint. Only redacted host/path observations are retained; actual session URLs and verification codes are excluded.
+
+The current policy permits exact cookie handoff endpoints on YouTube and Grok, plus `/accounts/SetSID` and `/accounts/CheckConnection` on exact `accounts.<domain>` hosts from Google's official [supported domain list](https://www.google.com/supported_domains), snapshotted on 1 November 2026 (187 domains). It does not trust arbitrary Google regional pages, unrelated YouTube pages or lookalike domains. Main-frame redirects that leave the allowed routes are blocked in place instead of exporting session-bearing URLs to the OS browser; embedded-frame redirects stay embedded. Both current and legacy Electron event arguments are handled.
+
+Opt-in `--trace-auth-navigation` writes `auth-navigation.jsonl` inside that app profile, recording only navigation event metadata and URLs stripped of credentials, query strings and fragments. It records no response bodies or request headers. It is off by default.
+
+For manual sign-in, use a freshly packaged EXE launched normally, without automation/inspect/remote-debugging flags. John reports Google rejects source/automation sign-in while normal builds reach verification. Keep automated fixture windows separate from manual account testing. John requested a fresh EXE/MSI installer for his test VM because this workstation contains his cookies; installer creation must not alter, clear, migrate or bundle those cookies. Fresh follow-up installers are built under `build/google-login-installer/` and are not published. Authenticated success on the VM remains pending.
+
+Follow-up regression methods: Node URL/redaction tests, and replay of the observed redacted redirect sequence against the actual main-process handlers in the Electron integration suite. The sequence includes regional Google and Grok cookie handoffs, unknown redirects, embedded frames and direct external links. Earlier experimental synthetic HTTP redirect fixtures did not complete reliably and were replaced by explicit event replay; do not describe that replay as a completed real-account login.

@@ -6,6 +6,16 @@ const INTERNAL_HOSTS = new Set([
   'accounts.google.com', 'appleid.apple.com'
 ]);
 
+// Cookie handoffs observed during Google -> Grok sign-in. Trust only these
+// endpoints, not every page or subdomain on YouTube or Grok's auth service.
+const AUTH_HANDOFF_PATHS = new Map([
+  ['accounts.youtube.com', new Set(['/accounts/SetSID', '/accounts/CheckConnection'])],
+  ['auth.grok.com', new Set(['/set-cookie'])]
+]);
+// Google's published supported-domain snapshot, used only for cookie handoffs.
+const GOOGLE_COOKIE_HOSTS = new Set(require('./google-domains.json').map(domain => `accounts.${domain}`));
+const GOOGLE_COOKIE_PATHS = new Set(['/accounts/SetSID', '/accounts/CheckConnection']);
+
 function parseWebUrl(value) {
   if (typeof value !== 'string') return null;
   try {
@@ -17,7 +27,9 @@ function parseWebUrl(value) {
 
 function isInternalUrl(value) {
   const url = parseWebUrl(value);
-  return !!url && INTERNAL_HOSTS.has(url.hostname);
+  return !!url && (INTERNAL_HOSTS.has(url.hostname) ||
+    AUTH_HANDOFF_PATHS.get(url.hostname)?.has(url.pathname) === true ||
+    (GOOGLE_COOKIE_HOSTS.has(url.hostname) && GOOGLE_COOKIE_PATHS.has(url.pathname)));
 }
 
 function isGrokUrl(value) {
