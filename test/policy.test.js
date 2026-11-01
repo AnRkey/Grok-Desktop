@@ -5,6 +5,16 @@ const observedCookieHandoffs = require('./fixtures/google-cookie-handoffs.json')
 const cookieSignout = require('./fixtures/grok-cookie-signout.json');
 const githubAuth = require('./fixtures/github-auth-navigation.json');
 
+test('the final Grokipedia logout handoff may finish but other paths stay blocked', () => {
+  assert.equal(isInternalUrl('https://auth.grokipedia.com/delete-cookie?test=dummy'), true);
+  for (const url of ['https://auth.grokipedia.com/delete-cookie',
+    'https://auth.grokipedia.com/unrecognized?test=dummy']) assert.equal(isExternalUrl(url), false, url);
+  for (const url of ['https://auth.grokipedia.com/set-cookie',
+    'https://auth.grokipedia.com/delete-cookie/extra', 'https://auth.grokipedia.com/other',
+    'https://auth.grokipedia.com.evil.org/delete-cookie', 'http://auth.grokipedia.com/delete-cookie',
+    'https://auth.grokipedia.com:444/delete-cookie']) assert.equal(isInternalUrl(url), false, url);
+});
+
 test('GitHub authentication stays in app while repository links open externally', () => {
   for (const url of githubAuth) {
     assert.equal(isInternalUrl(url), true, url);

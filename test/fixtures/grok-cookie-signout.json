@@ -1,5 +1,6 @@
 [
   "https://auth.grok.com/delete-cookie",
   "https://auth.grokusercontent.com/delete-cookie",
-  "https://auth.x.ai/delete-cookie"
+  "https://auth.x.ai/delete-cookie",
+  "https://auth.grokipedia.com/delete-cookie"
 ]

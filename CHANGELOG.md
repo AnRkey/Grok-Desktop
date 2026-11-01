@@ -8,6 +8,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ## [1.3.0] - Unreleased (VM approval pending)
 
 ### Fixed
+- Finish Grok sign-out through the final Grokipedia cookie-deletion handoff so the tab can return to the signed-out page.
 - Keep GitHub OAuth login and verification routes inside the app session while repository links continue to open in the browser.
 - Allow trusted cookie-deletion handoffs during sign-out so the active Grok page can show the signed-out state without restarting the app.
 - Complete the xAI cookie handoff after Google verification so the original login tab can finish instead of remaining blank on Redirecting.

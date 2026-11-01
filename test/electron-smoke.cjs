@@ -221,7 +221,8 @@ const path = require('node:path');
         let template;
         Menu.buildFromTemplate = items => { template = items; return { popup() {} }; };
         for (const url of ['https://accounts.youtube.com/accounts/SetSID?test=dummy',
-          'https://github.com/login/oauth/authorize?state=dummy']) {
+          'https://github.com/login/oauth/authorize?state=dummy',
+          'https://auth.grokipedia.com/delete-cookie?test=dummy']) {
           guest.emit('context-menu', {}, { x: 10, y: 10, linkURL: url });
           await template.find(item => item.label === 'Open Link in Browser').click();
         }
@@ -233,6 +234,8 @@ const path = require('node:path');
       'https://accounts.youtube.com/accounts/SetSID?test=dummy')), false);
     assert.equal(await page.evaluate(() => window.desktop.invoke('open-external-url',
       'https://github.com/login/oauth/authorize?state=dummy')), false);
+    assert.equal(await page.evaluate(() => window.desktop.invoke('open-external-url',
+      'https://auth.grokipedia.com/delete-cookie?test=dummy')), false);
 
 
     await page.locator('#info-btn').click();

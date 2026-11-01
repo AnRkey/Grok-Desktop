@@ -155,3 +155,11 @@ Implementation e7a8b89 is pushed to development. Nine Node regressions and real 
 - MSI: `build/Grok-Desktop_Installer-v1.3.0-auth-test-5.msi`; SHA-256 `dbf5bfca4051b57812306f1b712d400de4392f73955be8d2795b0b98d9372411`.
 
 The next authenticated VM results are still required for GitHub and sign-out; no production-code changes were made after the tested implementation.
+
+### Authentication test 6: finish Grok sign-out after GitHub login
+
+John confirms the authentication flows now work, clarifying that the remaining sign-out button is in Grok, not GitHub. His test 5 VM trace shows GitHub password, WebAuthn/app verification, consent and the Grok callback completing in the original tab at 18:33:19 UTC. Sign-out then passes through all three previously covered cookie-deletion services and stops at an additional redirect to `https://auth.grokipedia.com/delete-cookie` at 18:33:28 UTC, logged as blocked-redirect. Returning manually to grok.com shows the signed-out state. No forced refresh or profile deletion is required to explain the stale display.
+
+Permit only that exact HTTPS host/path internally and prevent that auth host escaping through any OS-browser route. Other Grokipedia paths, including set-cookie, are not granted internal access. The four-hop sign-out fixture now matches the observed VM chain. Both Node regressions failed on the new endpoint before the fix and pass afterward (10/10 tests); Electron replay covers all four routes through direct/redirect modern/legacy handlers plus context-menu/IPC escape prevention.
+
+Fresh test 6 packages use version 1.3.0, Windows file version 1.3.0.6, title Authentication test 6 and redacted diagnostics. Deliver EXE/MSI directly in build root with old artifacts archived outside it. The VM must confirm Grok's Sign out visibly reaches the signed-out page in the same tab, then sign-in still works. All providers' sign-in is now confirmed by John, but the new final sign-out handoff and public release still await his verification/approval.
