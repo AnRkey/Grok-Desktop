@@ -148,7 +148,9 @@ const path = require('node:path');
 
     // Replay the redacted manual navigation sequence into the installed main
     // handlers. Keep all real-account traffic out of this offline test.
-    const navigation = await app.evaluate(({ shell, webContents }) => {
+    const observedCookieHandoffs = require('./fixtures/google-cookie-handoffs.json');
+    const navigation = await app.evaluate(({ shell, webContents }, chainFromTrace) => {
+      global.observedCookieHandoffs = chainFromTrace;
       const original = shell.openExternal;
       const external = [];
       shell.openExternal = async url => { external.push(url); };
@@ -161,15 +163,7 @@ const path = require('node:path');
         return prevented;
       };
       try {
-        const chain = [
-          'https://accounts.google.com/CheckCookie?test=dummy',
-          'https://accounts.youtube.com/accounts/SetSID?test=dummy',
-          'https://accounts.google.co.za/accounts/SetSID?test=dummy',
-          'https://accounts.google.com/signin/oauth/legacy/consent?test=dummy',
-          'https://grok.com/api/auth/oauth/callback?test=dummy',
-          'https://auth.grok.com/set-cookie?test=dummy',
-          'https://auth.grokusercontent.com/set-cookie?test=dummy'
-        ];
+        const chain = global.observedCookieHandoffs;
         const modern = chain.map(url => emit('will-redirect', url));
         const legacy = chain.map(url => emit('will-redirect', url, true, true));
         const frame = emit('will-redirect', 'https://example.org/frame-redirect', false);
@@ -178,9 +172,9 @@ const path = require('node:path');
         const direct = emit('will-navigate', 'https://example.org/article');
         return { modern, legacy, frame, unknown, noEscapedRedirect, direct, external };
       } finally { shell.openExternal = original; }
-    });
-    assert.deepEqual(navigation.modern, Array(7).fill(false));
-    assert.deepEqual(navigation.legacy, Array(7).fill(false));
+    }, observedCookieHandoffs);
+    assert.deepEqual(navigation.modern, Array(observedCookieHandoffs.length).fill(false));
+    assert.deepEqual(navigation.legacy, Array(observedCookieHandoffs.length).fill(false));
     assert.equal(navigation.frame, false);
     assert.equal(navigation.unknown, true);
     assert.equal(navigation.noEscapedRedirect, true);

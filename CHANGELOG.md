@@ -8,6 +8,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ## [1.3.0] - Unreleased (VM approval pending)
 
 ### Fixed
+- Complete the xAI cookie handoff after Google verification so the original login tab can finish instead of remaining blank on Redirecting.
 - Keep Google, YouTube and regional Google cookie handoffs and Grok auth cookies inside the app session; prevent automatic redirects opening external browser sessions.
 - Windows hardware acceleration no longer uses Linux-only GPU probes (PR #33; report #26).
 - Search results requesting a new window open as background Grok tabs (#14).

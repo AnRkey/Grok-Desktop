@@ -1,0 +1,11 @@
+[
+  "https://accounts.google.com/CheckCookie",
+  "https://accounts.youtube.com/accounts/SetSID",
+  "https://accounts.google.co.za/accounts/SetSID",
+  "https://accounts.google.com/signin/oauth/legacy/consent",
+  "https://grok.com/api/auth/oauth/callback/",
+  "https://grok.com/api/auth/oauth/callback",
+  "https://auth.grok.com/set-cookie",
+  "https://auth.grokusercontent.com/set-cookie",
+  "https://auth.x.ai/set-cookie"
+]

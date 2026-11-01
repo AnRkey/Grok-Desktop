@@ -1,6 +1,16 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { isInternalUrl, isGrokUrl, isExternalUrl, shouldDisableGpu } = require('../src/url-policy');
+const observedCookieHandoffs = require('./fixtures/google-cookie-handoffs.json');
+
+test('the complete cookie handoff sequence from the VM trace stays in its original tab', () => {
+  for (const url of observedCookieHandoffs) assert.equal(isInternalUrl(url), true, url);
+  for (const url of ['https://auth.x.ai/set-cookie/extra', 'https://auth.x.ai/other',
+    'https://auth.x.ai.evil.org/set-cookie', 'http://auth.x.ai/set-cookie']) {
+    assert.equal(isInternalUrl(url), false, url);
+  }
+  assert.equal(isExternalUrl('https://auth.x.ai/set-cookie?test=dummy'), false);
+});
 
 test('trusted URLs use parsed HTTPS hosts, not substrings', () => {
   for (const url of ['https://grok.com', 'https://grok.com/c/123', 'https://accounts.x.ai/sign-in', 'https://x.com/i/flow/login']) {
