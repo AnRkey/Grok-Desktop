@@ -180,6 +180,31 @@ const path = require('node:path');
     assert.equal(navigation.noEscapedRedirect, true);
     assert.equal(navigation.direct, true);
     assert.deepEqual(navigation.external, ['https://example.org/article']);
+    const signoutRoutes = require('./fixtures/grok-cookie-signout.json');
+    const signout = await app.evaluate(({ shell, webContents }, routes) => {
+      const guest = webContents.getAllWebContents().find(wc => wc.getType() === 'webview');
+      const original = shell.openExternal;
+      const external = [];
+      shell.openExternal = async url => { external.push(url); };
+      try {
+        const cancellations = [];
+        for (const url of routes) {
+          for (const kind of ['will-navigate', 'will-redirect']) {
+            for (const legacy of [false, true]) {
+              let prevented = false;
+              const event = { preventDefault() { prevented = true; } };
+              if (!legacy) Object.assign(event, { url, isMainFrame: true });
+              guest.emit(kind, event, url, false, true);
+              cancellations.push(prevented);
+            }
+          }
+        }
+        return { cancellations, external };
+      } finally { shell.openExternal = original; }
+    }, signoutRoutes);
+    assert.deepEqual(signout.cancellations, Array(signoutRoutes.length * 4).fill(false));
+    assert.deepEqual(signout.external, []);
+
     const finalGuard = await app.evaluate(async ({ shell, webContents, Menu, ipcMain }) => {
       const originalShell = shell.openExternal;
       const originalMenu = Menu.buildFromTemplate;
@@ -213,7 +238,7 @@ const path = require('node:path');
     console.log(JSON.stringify({ result: 'PASS', executablePath, version,
       checks: ['sandbox/isolation', 'AOT off/on/off', 'background search tab', 'unique tabs', 'Ctrl+T and close',
         'authenticated stats', 'viewport fit', 'unsafe URL blocking', 'media consent denial/allow', 'Inspect Element',
-        'OAuth popup session', 'Google cookie handoffs', 'subframe redirect stays embedded', 'unknown redirect never escapes', 'About version', 'no renderer errors'] }, null, 2));
+        'OAuth popup session', 'Google cookie handoffs', 'same-tab sign-out cookie handoffs', 'subframe redirect stays embedded', 'unknown redirect never escapes', 'About version', 'no renderer errors'] }, null, 2));
   } finally {
     await app.close();
   }

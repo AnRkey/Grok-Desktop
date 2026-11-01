@@ -10,9 +10,9 @@ const INTERNAL_HOSTS = new Set([
 // endpoints, not every page or subdomain on YouTube or Grok's auth service.
 const AUTH_HANDOFF_PATHS = new Map([
   ['accounts.youtube.com', new Set(['/accounts/SetSID', '/accounts/CheckConnection'])],
-  ['auth.grok.com', new Set(['/set-cookie'])],
-  ['auth.grokusercontent.com', new Set(['/set-cookie'])],
-  ['auth.x.ai', new Set(['/set-cookie'])]
+  ['auth.grok.com', new Set(['/set-cookie', '/delete-cookie'])],
+  ['auth.grokusercontent.com', new Set(['/set-cookie', '/delete-cookie'])],
+  ['auth.x.ai', new Set(['/set-cookie', '/delete-cookie'])]
 ]);
 // Google's published supported-domain snapshot, used only for cookie handoffs.
 const GOOGLE_COOKIE_HOSTS = new Set(require('./google-domains.json').map(domain => `accounts.${domain}`));

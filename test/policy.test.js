@@ -2,6 +2,19 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { isInternalUrl, isGrokUrl, isExternalUrl, shouldDisableGpu } = require('../src/url-policy');
 const observedCookieHandoffs = require('./fixtures/google-cookie-handoffs.json');
+const cookieSignout = require('./fixtures/grok-cookie-signout.json');
+
+test('sign-out may finish through the trusted cookie services in the same tab', () => {
+  for (const url of cookieSignout) {
+    assert.equal(isInternalUrl(url), true, url);
+    assert.equal(isExternalUrl(url), false, url);
+  }
+  for (const url of ['https://auth.grok.com/delete-cookie/extra',
+    'https://auth.grok.com.evil.org/delete-cookie', 'https://auth.x.ai/other',
+    'http://auth.grok.com/delete-cookie', 'https://auth.grok.com:444/delete-cookie']) {
+    assert.equal(isInternalUrl(url), false, url);
+  }
+});
 
 test('the complete cookie handoff sequence from the VM trace stays in its original tab', () => {
   for (const url of observedCookieHandoffs) assert.equal(isInternalUrl(url), true, url);
