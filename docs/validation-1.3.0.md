@@ -125,3 +125,14 @@ The new user-supplied test 3 VM trace proves the full Google login now returns t
 Allow the matching `/delete-cookie` endpoint alongside `/set-cookie` on the same three trusted Grok/xAI cookie services. The first route is directly evidenced by the VM trace; the peer service routes are covered as the corresponding logout endpoints rather than claimed as observed redirects. Keep unrelated paths, protocols, ports, lookalike hosts and all authentication-to-OS-browser requests blocked. Let the site's logout navigation finish naturally; do not clear the workstation profile or add a forced client-side login-state workaround.
 
 The new Node sign-out regression fails on the exact observed auth.grok.com/delete-cookie URL before the policy change, then passes afterward. Electron handler replay covers direct and redirect sign-out navigation with current/legacy event arguments for all three cookie services, alongside the prior full login fixture. Test 4 installers have source version 1.3.0, Windows build 1.3.0.4, title Google login test 4 and redacted diagnostics. Deliver them directly in build root and archive old files and transient packaging directories outside build. The VM must confirm sign-in and visible sign-out in the same tab without closing the app. No public release is approved yet.
+
+### Test 4 delivery
+
+Implementation commit 5582f9d is pushed to development. Independent verification passed: all eight Node policy/redaction regressions and real Electron runtime checks on Windows and Linux in [run 41335920975](https://github.com/AnRkey/Grok-Desktop/actions/runs/41335920975). Local npm audit reports zero vulnerabilities. At handoff the remote packaging jobs may still be finishing; local EXE and MSI builds completed successfully with publishing disabled.
+
+The completed NSIS EXE's embedded ASAR was extracted and verified against the current source URL policy byte-for-byte, with test 4 metadata and diagnostics enabled. It excludes profiles, cookies and navigation traces. Temporary packaging folders were moved outside build, leaving only the current deliverables directly in its root.
+
+- EXE: `build/Grok-Desktop_Installer-v1.3.0-google-login-test-4.exe`; SHA-256 `ab775dd163578cca5102363d2b32273e64b9a4c122048cc98f15db26ee496524`.
+- MSI: `build/Grok-Desktop_Installer-v1.3.0-google-login-test-4.msi`; SHA-256 `f78397bedfab4cc186b0addf1a68ccc9331367d1031e5820c72c0779ca0ec2b4`.
+
+Authenticated sign-out behavior still requires John's VM confirmation; automated handler replay does not establish real-service success. No workstation application was launched, installed or given a changed cookie profile for this build.
