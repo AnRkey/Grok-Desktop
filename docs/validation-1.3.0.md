@@ -146,3 +146,12 @@ Allow only the exact github.com HTTPS host and its `/login`, `/login/…`, `/ses
 The Node regression first failed on the observed authorization URL, then passed after the fix (9/9 tests). Independent Electron coverage exercises a real same-session sandboxed GitHub popup with offline fixture content, direct/redirect navigation with modern/legacy event arguments, and context-menu/IPC escape prevention. These checks do not authenticate a real GitHub account.
 
 Fresh test 5 EXE/MSI packages retain 1.3.0 with Windows build 1.3.0.5, visible title Authentication test 5 and redacted diagnostics. Deliver directly in build root after archiving old artifacts outside it. Test 5 includes test 4's sign-out fix. VM verification should cover GitHub login through password/verification/consent to the original Grok tab, then sign out and back in without restarting. Publication remains on hold.
+
+### Test 5 delivery
+
+Implementation e7a8b89 is pushed to development. Nine Node regressions and real Electron runtime checks passed independently on Windows and Linux in [run 41336509807](https://github.com/AnRkey/Grok-Desktop/actions/runs/41336509807); npm audit reports zero findings. Remote packaging may still be finishing at handoff. Local EXE/MSI packaging completed with publishing disabled. The completed EXE's embedded ASAR was extracted and verified byte-for-byte against source main, URL policy and trace code, with test 5 metadata and no profiles/cookies/traces. Build contains no subdirectories or older installers.
+
+- EXE: `build/Grok-Desktop_Installer-v1.3.0-auth-test-5.exe`; SHA-256 `3db8609fdc76a300b45fa31367114988f729eee799017532147db873c78e88a9`.
+- MSI: `build/Grok-Desktop_Installer-v1.3.0-auth-test-5.msi`; SHA-256 `dbf5bfca4051b57812306f1b712d400de4392f73955be8d2795b0b98d9372411`.
+
+The next authenticated VM results are still required for GitHub and sign-out; no production-code changes were made after the tested implementation.
