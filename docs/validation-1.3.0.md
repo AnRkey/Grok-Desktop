@@ -163,3 +163,12 @@ John confirms the authentication flows now work, clarifying that the remaining s
 Permit only that exact HTTPS host/path internally and prevent that auth host escaping through any OS-browser route. Other Grokipedia paths, including set-cookie, are not granted internal access. The four-hop sign-out fixture now matches the observed VM chain. Both Node regressions failed on the new endpoint before the fix and pass afterward (10/10 tests); Electron replay covers all four routes through direct/redirect modern/legacy handlers plus context-menu/IPC escape prevention.
 
 Fresh test 6 packages use version 1.3.0, Windows file version 1.3.0.6, title Authentication test 6 and redacted diagnostics. Deliver EXE/MSI directly in build root with old artifacts archived outside it. The VM must confirm Grok's Sign out visibly reaches the signed-out page in the same tab, then sign-in still works. All providers' sign-in is now confirmed by John, but the new final sign-out handoff and public release still await his verification/approval.
+
+### Test 6 delivery
+
+Implementation e7cd4b3 is pushed on development. Ten Node regressions and real Electron checks passed on Windows and Linux in [run 41337471351](https://github.com/AnRkey/Grok-Desktop/actions/runs/41337471351); npm audit has zero findings. Remote packaging may still be finishing. Local EXE/MSI builds completed with publishing disabled. Extracting the completed NSIS EXE confirmed byte-for-byte agreement with source main, URL policy and trace code, Authentication test 6 metadata and no profile/cookie/trace files. Temporary packaging folders and superseded test 5 outputs are archived outside build; no build subdirectories remain.
+
+- EXE: `build/Grok-Desktop_Installer-v1.3.0-auth-test-6.exe`; SHA-256 `9ecef2eb58cfe068a69786e6093d0cd0d429a7f60799970fdd0ed8603aeb575a`.
+- MSI: `build/Grok-Desktop_Installer-v1.3.0-auth-test-6.msi`; SHA-256 `43586205dbd7e3ece5bdac028b7ade1393ef6b1668371e2ab11e34f7b960af46`.
+
+No production code changed after the tested implementation. Real-service completion of the final logout route remains for the VM test; no release/tag/main merge is approved yet.
