@@ -1,6 +1,6 @@
 # Version 1.3.0 validation and handoff
 
-Status: development candidate, awaiting John Mitchell's VM approval. No release tag, public release, main merge or public asset publication is authorized yet. Feature PRs #23, #27, #28 and #30 remain untouched.
+Current status: John Mitchell confirmed all four sign-in providers and Grok sign-out in his Windows VM. He authorized release preparation, chose nine package/archive types, then explicitly paused publication. No release/tag/main merge has occurred; wait for him to resume publication. Final packages must include the updated About contributor credits. Feature PRs #23, #27, #28 and #30 remain untouched. The chronological results below retain their original test/build context.
 
 ## Baseline security review
 
@@ -182,3 +182,11 @@ About now credits @realvathy (GPU fix, PR #33; git display name yuunagi), @Vecto
 The Electron About check verifies each displayed handle and profile URL. A separate offline render checks the About page in light/dark themes and at a narrow viewport. Any final 1.3.0 packages must be rebuilt from this About-page change; earlier test 6/CI packages predate the credits.
 
 Verification completed: all ten Node regressions and the full local Electron integration suite pass, including the About handle/URL assertions. Independent headless Chrome rendering passes offline in light/dark themes at 1100x720 and light mode at 360x640, with no horizontal overflow or clipped credits; screenshots were visually inspected. No account login or normal user profile was used. Publication remains paused.
+
+### Release reference and packaging consistency review
+
+README, contributing/security policies, current changelog entry, release notes and AppStream metadata now agree on version 1.3.0, completed Windows VM authentication/sign-out checks and the explicit publication pause. README/release notes list the same nine versioned filenames, including Windows 7z; their future download links are clearly marked unavailable until publication, with a working link to the still-public 1.2.5 release. Install examples use the actual RPM/DEB artifact names. GitHub authentication and About contributor credits are documented. Historical changelog versions and the saved 1.2.5 template remain intact.
+
+Shared archive helpers now create Windows ZIP/7z and Linux tar.gz/7z; both the development workflow and build.bat call them. This restores Windows 7z to the build output and removes nested Linux shell quoting from build.bat. Shell files use LF through .gitattributes. Remaining .gitignore merge markers were removed while retaining all ignore patterns.
+
+Local verification passed: metadata/lockfile versions and dependencies agree; README and release notes contain exactly the same nine 1.3.0 asset URLs; relative document links resolve; AppStream parses with matching version/license. Windows fixture archives passed independent integrity tests and byte-for-byte extraction round trips with the expected root layout. The Linux helper ran under Git Bash against a separate fixture and produced valid tar.gz/7z archives; native Linux production packaging is checked by CI. All ten Node regressions still pass. None of these checks publishes assets or changes a user profile.

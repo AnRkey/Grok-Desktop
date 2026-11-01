@@ -12,7 +12,7 @@ if errorlevel 1 exit /b 1
 if /i "%BUILD_TARGET%"=="linux" goto linux
 call npm run build
 if errorlevel 1 exit /b 1
-powershell -NoProfile -Command "$version = (Get-Content package.json | ConvertFrom-Json).version; Compress-Archive -Path 'build/win-unpacked/*' -DestinationPath ('build/Grok-Desktop_Windows-v' + $version + '.zip') -Force"
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-windows-archives.ps1
 if errorlevel 1 exit /b 1
 if /i "%BUILD_TARGET%"=="win" goto done
 :linux
@@ -22,7 +22,7 @@ if errorlevel 1 (
   exit /b 1
 )
 rem Isolate Linux node_modules from the host. Do not modify global npm settings or remove shared images.
-docker run --rm -v "%CD%:/project" -v /project/node_modules -w /project node:24-bookworm bash -c "apt-get update && apt-get install -y rpm p7zip-full && npm ci && npm run build-linux && version=$(node -p 'require("./package.json").version') && tar -czf build/Grok-Desktop_Linux-v${version}.tar.gz -C build/linux-unpacked . && 7z a -t7z build/Grok-Desktop_Linux-v${version}.7z ./build/linux-unpacked/* -mx=9"
+docker run --rm -v "%CD%:/project" -v /project/node_modules -w /project node:24-bookworm bash -c "apt-get update && apt-get install -y rpm p7zip-full && npm ci && npm run build-linux && bash scripts/build-linux-archives.sh"
 if errorlevel 1 exit /b 1
 :done
 echo Build complete. Artifacts are in build. Publishing is disabled.

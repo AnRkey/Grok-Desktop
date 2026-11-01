@@ -1,7 +1,7 @@
-# Grok-Desktop v1.3.0 (in testing)
+# Grok-Desktop v1.3.0 (release prepared)
 
 ## Description
-Grok-Desktop is an Electron-based desktop application for Windows 10/11 and Linux that wraps `grok.com`, providing desktop-application-like access to Grok with real-time API usage monitoring, multi-tab support, and seamless authentication for xAI, Google, and Apple accounts.
+Grok-Desktop is an Electron-based desktop application for Windows 10/11 and Linux that wraps `grok.com`, providing desktop-application-like access to Grok with real-time API usage monitoring, multi-tab support, and authentication for xAI/X, Google, Apple and GitHub accounts.
 
 ## Screenshot
 ![Screenshot](screenshot.png)
@@ -21,7 +21,7 @@ Grok-Desktop is an Electron-based desktop application for Windows 10/11 and Linu
   - `Ctrl+Mouse-wheel-scroll`: Cycle through open tabs (next/previous)
   - `Ctrl+R`: Reload the active tab
   - `Ctrl+I`: Show information/about dialog
-- **Authentication support** for xAI, Google, and Apple accounts
+- **Authentication support** for xAI/X, Google, Apple and GitHub accounts, with sign-in and sign-out kept in the app
 - **Clean interface** with no menu bar for distraction-free usage
 - **Always-on-top function** with cross-platform support (Windows & Linux)
 - **Dark/Light mode support** with system theme detection
@@ -30,19 +30,22 @@ Grok-Desktop is an Electron-based desktop application for Windows 10/11 and Linu
 
 ## Download
 
-Version 1.3.0 is being tested on `development`. Public downloads below remain at 1.2.5 until VM approval.
+Version 1.3.0 has passed the maintainer's Windows VM authentication and sign-out checks. Publication is paused at his request. The nine versioned links below are prepared for 1.3.0 and will become available when it is published; [v1.2.5 remains the current public release](https://github.com/AnRkey/Grok-Desktop/releases/tag/v1.2.5).
 
 ### Windows
-- [Grok-Desktop_Installer-v1.2.5.exe](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.5/Grok-Desktop_Installer-v1.2.5.exe) - Windows installer (EXE)
-- [Grok-Desktop_Installer-v1.2.5.msi](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.5/Grok-Desktop_Installer-v1.2.5.msi) - Windows installer (MSI)
-- [Grok-Desktop_Portable-v1.2.5.exe](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.5/Grok-Desktop_Portable-v1.2.5.exe) - Portable Windows executable
-- [Grok-Desktop_Windows-v1.2.5.zip](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.5/Grok-Desktop_Windows-v1.2.5.zip) - Windows ZIP archive
+- [Grok-Desktop_Installer-v1.3.0.exe](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.3.0/Grok-Desktop_Installer-v1.3.0.exe) - Windows installer (EXE)
+- [Grok-Desktop_Installer-v1.3.0.msi](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.3.0/Grok-Desktop_Installer-v1.3.0.msi) - Windows installer (MSI)
+- [Grok-Desktop_Portable-v1.3.0.exe](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.3.0/Grok-Desktop_Portable-v1.3.0.exe) - Portable Windows executable
+- [Grok-Desktop_Windows-v1.3.0.zip](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.3.0/Grok-Desktop_Windows-v1.3.0.zip) - Windows ZIP archive
+- [Grok-Desktop_Windows-v1.3.0.7z](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.3.0/Grok-Desktop_Windows-v1.3.0.7z) - Windows 7z archive
 
 ### Linux
-- [Grok-Desktop-v1.2.5.deb](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.5/Grok-Desktop-v1.2.5.deb) - Debian/Ubuntu package
-- [Grok-Desktop-v1.2.5.rpm](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.5/Grok-Desktop-v1.2.5.rpm) - RPM package (RHEL/Rocky Linux/Fedora)
-- [Grok-Desktop_Linux-v1.2.5.tar.gz](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.5/Grok-Desktop_Linux-v1.2.5.tar.gz) - Linux tar.gz archive
-- [Grok-Desktop_Linux-v1.2.5.7z](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.5/Grok-Desktop_Linux-v1.2.5.7z) - Linux 7z archive
+- [Grok-Desktop-v1.3.0.deb](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.3.0/Grok-Desktop-v1.3.0.deb) - Debian/Ubuntu package
+- [Grok-Desktop-v1.3.0.rpm](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.3.0/Grok-Desktop-v1.3.0.rpm) - RPM package (RHEL/Rocky Linux/Fedora)
+- [Grok-Desktop_Linux-v1.3.0.tar.gz](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.3.0/Grok-Desktop_Linux-v1.3.0.tar.gz) - Linux tar.gz archive
+- [Grok-Desktop_Linux-v1.3.0.7z](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.3.0/Grok-Desktop_Linux-v1.3.0.7z) - Linux 7z archive
+
+All packages target x64. The ZIP/7z/tar.gz files contain the unpacked application; extract the entire archive before launching it.
 
 ## System Requirements
 
@@ -108,6 +111,9 @@ npm run build-portable
 
 # Directory build (unpacked)
 npm run build-dir
+
+# ZIP and 7z archives of build/win-unpacked (requires 7-Zip)
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-windows-archives.ps1
 ```
 
 #### Linux
@@ -125,12 +131,14 @@ npm run build-all
 **Notes:**
 - Build scripts use the locked local `electron-builder`; publishing is disabled
 - Build outputs are written to the `build/` directory
-- Run Linux packaging on Linux with `npm run build-linux`; the development workflow also builds RPM/DEB artifacts
+- `build.bat win` creates all five Windows package/archive types; install [7-Zip](https://www.7-zip.org/) first
+- Run Linux packaging on Linux with `npm run build-linux`; the development workflow also creates DEB/RPM, Linux 7z and tar.gz archives
+- `build.bat linux` creates all four Linux types in Docker; `build.bat all` runs both platform builds
 
 ## Installation
 
 ### Windows
-1. Download and run `Grok-Desktop_Installer-v1.2.5.exe` from the releases page
+1. Download and run `Grok-Desktop_Installer-v1.3.0.exe` from the releases page once 1.3.0 is published
 2. Follow the installation wizard
 3. Launch "Grok Desktop" from the Start Menu
 
@@ -139,19 +147,24 @@ npm run build-all
 #### RPM Package (Recommended for RHEL/Rocky Linux)
 ```bash
 cd build
-sudo dnf install ./Grok-Desktop-v1.2.5.x86_64.rpm
+sudo dnf install ./Grok-Desktop-v1.3.0.rpm
+```
+
+#### DEB Package (Debian/Ubuntu)
+```bash
+sudo apt install ./Grok-Desktop-v1.3.0.deb
 ```
 
 ## Usage Guide
 
 ### Getting Started
 1. Launch Grok-Desktop from your applications menu or desktop shortcut
-2. Sign in to grok.com using your xAI, Google, or Apple account
+2. Sign in to grok.com using your xAI/X, Google, Apple or GitHub account
 3. The application opens with your first Grok tab
 
 ### Interface Overview
 - **Tab Bar**: Create and switch between multiple Grok conversations
-- **Navigation Controls**: Back/forward buttons, reload, and URL bar
+- **Navigation Controls**: Reload button; back/forward/reload in the context menu
 - **Toolbar Buttons**:
   - **+**: Create new tab
   - **↻**: Reload current tab
@@ -208,7 +221,7 @@ Need help? Found a bug? Have a feature request?
 #### When Reporting Issues
 Please include:
 1. **Operating System & Version**: e.g., "Rocky Linux 10 with GNOME 49"
-2. **Application Version**: Found in Help → About dialog
+2. **Application Version**: Found using the **i** button or `Ctrl+I`
 3. **Steps to Reproduce**: Detailed step-by-step instructions
 4. **Expected vs Actual Behavior**: What should happen vs what actually happens
 5. **Screenshots**: If applicable, especially for UI issues
@@ -276,7 +289,7 @@ Grok-Desktop is built with:
 
 ### Security Features
 - **Domain validation**: Prevents malicious subdomain attacks
-- **OAuth protection**: Secure handling of Google/Apple/xAI authentication
+- **OAuth protection**: In-app Google/Apple/xAI/X/GitHub authentication and cookie handoffs
 - **External URL validation**: Blocks localhost/private IPs and validates protocols
 - **CSP headers**: Content Security Policy for additional protection
 - **Sandboxing**: Electron's security features enabled by default
@@ -306,8 +319,7 @@ Cross-platform always-on-top functionality with automatic compatibility handling
 #### Linux Implementation
 - **Primary**: Uses `wmctrl` command-line tool for reliable window management
 - **Fallback**: Electron's `setAlwaysOnTop()` method when `wmctrl` unavailable
-- **Wayland Compatibility**: Automatically detects Wayland and restarts with X11 forced
-- **GNOME Support**: Works with GNOME Shell and Mutter window manager
+- **Display server**: `wmctrl` needs X11/XWayland; native Wayland window managers may restrict always-on-top behavior
 
 #### Linux Dependencies
 ```bash
@@ -316,23 +328,24 @@ sudo dnf install wmctrl    # Rocky Linux/RHEL/Fedora
 sudo apt install wmctrl    # Ubuntu/Debian
 ```
 
-### Recent Changes (v1.2.5 public release)
-- **Bug Fix**: Fixed Usage Stats "Login required" error on Windows 11 (Issue #11)
-  - API calls now execute in webview context with proper authentication
-  - Thanks to Joshua Wang for identifying the root cause
-- **Previous (v1.2.4)**: API Usage Monitoring, enhanced security, improved Linux AOT support
+### Recent Changes (v1.3.0 prepared release)
+- Electron 45.2.1, patched build dependencies, renderer isolation and guarded IPC
+- In-app Google, Apple, X and GitHub sign-in and complete Grok sign-out
+- Restored Inspect Element and background tabs for Grok search results
+- Correct Windows GPU detection and AOT state; contributor handles in About
+- Nine packages/archives across Windows and Linux, preserving Windows 7z support
 
 For complete changelog, see [CHANGELOG.md](CHANGELOG.md).
 
 ## Changelog Summary
 
-### v1.3.0 (In testing)
+### v1.3.0 (Prepared; publication paused)
 - Electron 45.2.1 and locked, audited build dependencies
 - Restored Inspect Element and internal background tabs for search results
 - Correct GPU detection on Windows; AOT starts off and reflects window state
 - Isolated renderers, guarded IPC, parsed URL checks and consent for Grok media access
 
-### v1.2.5 (Latest public release)
+### v1.2.5 (Public release until 1.3.0 is published)
 - 🐛 **Bug Fix**: Fixed Usage Stats "Login required" error on Windows 11
   - Resolved 403 API errors by executing fetch in authenticated webview context
   - Thanks to Joshua Wang (@JoshuaWang2211) for the bug report and solution
@@ -344,7 +357,7 @@ For complete changelog, see [CHANGELOG.md](CHANGELOG.md).
 - **v1.2.1**: Better dark mode, voice mode support
 - **v1.2.0**: WebRTC/audio support, CSP enhancements
 
-See [CHANGELOG.md](CHANGELOG.md) for complete version history and [the 1.3.0 test notes](docs/validation-1.3.0.md) for the VM checklist.
+See [CHANGELOG.md](CHANGELOG.md) for complete version history and [the 1.3.0 validation record](docs/validation-1.3.0.md) for checks and VM results.
 
 ## Contributing
 
@@ -383,4 +396,4 @@ The `grok.ico` application icon was sourced online and converted for use in this
 
 ---
 
-**Grok-Desktop v1.3.0 (in testing)** - Making Grok accessible everywhere! 🚀
+**Grok-Desktop v1.3.0 (release prepared)** - Making Grok accessible everywhere! 🚀

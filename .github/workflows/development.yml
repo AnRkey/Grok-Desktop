@@ -39,12 +39,10 @@ jobs:
       - name: Windows packages
         if: runner.os == 'Windows'
         run: npm run build
-      - name: Windows archive
+      - name: Windows ZIP and 7z archives
         if: runner.os == 'Windows'
         shell: pwsh
-        run: |
-          $version = (Get-Content package.json | ConvertFrom-Json).version
-          Compress-Archive -Path 'build/win-unpacked/*' -DestinationPath "build/Grok-Desktop_Windows-v$version.zip"
+        run: ./scripts/build-windows-archives.ps1
       - name: Linux packages and archives
         if: runner.os == 'Linux'
         shell: bash
@@ -52,9 +50,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y rpm p7zip-full
           npm run build-linux
-          version=$(node -p 'require("./package.json").version')
-          tar -czf "build/Grok-Desktop_Linux-v${version}.tar.gz" -C build/linux-unpacked .
-          7z a -t7z "build/Grok-Desktop_Linux-v${version}.7z" ./build/linux-unpacked/* -mx=9
+          bash scripts/build-linux-archives.sh
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: grok-1.3.0-${{ runner.os }}-test-builds

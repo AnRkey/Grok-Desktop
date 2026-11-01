@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
 
-## [1.3.0] - Unreleased (VM approval pending)
+## [1.3.0] - Unreleased (VM verified; publication paused)
 
 ### Fixed
 - Finish Grok sign-out through the final Grokipedia cookie-deletion handoff so the tab can return to the signed-out page.
@@ -16,7 +16,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Windows hardware acceleration no longer uses Linux-only GPU probes (PR #33; report #26).
 - Search results requesting a new window open as background Grok tabs (#14).
 - Restore Inspect Element to context menus, including webviews (#13).
-- Preserve OAuth popup openers and the persistent login session (#25, #26; live login verification pending).
+- Preserve OAuth popup openers and the persistent login session (#25, #26); Google, Apple, X and GitHub sign-in and Grok sign-out verified in the maintainer's Windows VM.
 - Start AOT off and synchronize its button with real window state (PR #35); fix Linux toggling off.
 - Fix Windows About file URLs, duplicate tab IDs, and content clipping below the toolbar.
 - Show unavailable usage services separately from authentication errors and clear stale warning colors.
@@ -34,11 +34,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 - Credit contributors by their GitHub handles on the in-app About page.
-- Source version 1.3.0; public release and tag await VM approval.
+- Source version 1.3.0; VM verification completed and publication paused at the maintainer's request.
 - Require Node.js 24 for development; correct package license metadata to GPL-2.0-only.
 - Build scripts use local electron-builder 26.18.0 with publication disabled.
 - Add independent policy and Electron runtime regression checks and development build artifacts.
-- Live-service reports #22, #25 and #26 need authenticated VM confirmation; #31 has no reproduction details.
+- Preserve nine package/archive types, including Windows ZIP/7z and Linux DEB/RPM/7z/tar.gz.
+- Imagine report #22 still needs verification; #31 has no reproduction details.
 
 ## [1.2.5] - 2025-12-17
 
