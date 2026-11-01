@@ -249,8 +249,7 @@ const path = require('node:path');
     assert.deepEqual(aboutCredits, [
       { text: '@realvathy', href: 'https://github.com/realvathy' },
       { text: '@VectorJay666', href: 'https://github.com/VectorJay666' },
-      { text: '@JoshuaWang2211', href: 'https://github.com/JoshuaWang2211' },
-      { text: '@cursoragent', href: 'https://github.com/cursoragent' }
+      { text: '@JoshuaWang2211', href: 'https://github.com/JoshuaWang2211' }
     ]);
     fs.mkdirSync('build', { recursive: true });
     await page.screenshot({ path: path.resolve('build', 'smoke-1.3.0.png') });
