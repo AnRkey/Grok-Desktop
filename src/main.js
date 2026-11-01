@@ -5,7 +5,8 @@ const fs = require('fs');
 const { execFile } = require('child_process');
 const { pathToFileURL } = require('url');
 const { isInternalUrl, isGrokUrl, isExternalUrl, shouldDisableGpu } = require('./url-policy');
-const { startAuthNavigationTrace } = require('./auth-navigation-trace');
+const { startAuthNavigationTrace, redactNavigationUrl } = require('./auth-navigation-trace');
+const packageMetadata = require('../package.json');
 let recordAuthNavigation = () => {};
 
 // GPU acceleration detection and graceful fallback
@@ -116,9 +117,13 @@ function handleTrusted(channel, handler) {
   });
 }
 
-async function openExternalUrl(url) {
-  if (!isExternalUrl(url)) return false;
-  recordAuthNavigation({ kind: 'external-browser', url });
+async function openExternalUrl(url, reason = 'shell-request', contents = null) {
+  const source = contents && !contents.isDestroyed() ? redactNavigationUrl(contents.getURL()) : undefined;
+  if (!isExternalUrl(url)) {
+    recordAuthNavigation({ kind: 'blocked-external', reason, source, url });
+    return false;
+  }
+  recordAuthNavigation({ kind: 'external-browser', reason, source, url });
   try { await shell.openExternal(url); return true; }
   catch (_) { return false; }
 }
@@ -232,6 +237,11 @@ function createWindow() {
 
   // Never launch pinned above other apps (user can opt in via AOT)
   try { mainWindow.setAlwaysOnTop(false); } catch (_) {}
+  if (packageMetadata.testBuild) {
+    const title = `Grok Desktop - ${packageMetadata.testBuild}`;
+    mainWindow.setTitle(title);
+    mainWindow.on('page-title-updated', event => { event.preventDefault(); mainWindow.setTitle(title); });
+  }
 
   // Disable the menu bar
   Menu.setApplicationMenu(null);
@@ -327,8 +337,8 @@ function createWindow() {
 
 // Create window when Electron has finished initialization
 app.whenReady().then(() => {
-  if (app.commandLine.hasSwitch('trace-auth-navigation')) {
-    recordAuthNavigation = startAuthNavigationTrace(app, path.join(app.getPath('userData'), 'auth-navigation.jsonl'));
+  if (app.commandLine.hasSwitch('trace-auth-navigation') || packageMetadata.authDiagnostics === true) {
+    recordAuthNavigation = startAuthNavigationTrace(app, path.join(app.getPath('userData'), 'auth-navigation.jsonl'), packageMetadata.testBuild || 'development');
   }
   setupUrlHandling();
   setupIpcHandlers();
@@ -381,7 +391,7 @@ function setupUrlHandling() {
         // An automatic redirect can contain OAuth state or cookie handoffs.
         // Block unknown destinations in place; only direct navigation opens
         // external links in the OS browser.
-        if (!isRedirect && contents !== mainWindow?.webContents) void openExternalUrl(url);
+        if (!isRedirect && contents !== mainWindow?.webContents) void openExternalUrl(url, 'navigation', contents);
       }
     };
     contents.on('will-navigate', guardNavigation(false));
@@ -401,7 +411,7 @@ function setupUrlHandling() {
             contextIsolation: true, sandbox: true, webviewTag: false }
         } };
       }
-      void openExternalUrl(url);
+      void openExternalUrl(url, 'popup', contents);
       return { action: 'deny' };
     });
   });
@@ -614,7 +624,7 @@ function setupContextMenus() {
       if (params.linkURL) {
         template.push({
           label: 'Open Link in Browser',
-          click: () => openExternalUrl(params.linkURL)
+          click: () => openExternalUrl(params.linkURL, 'context-menu', contents)
         });
       }
 

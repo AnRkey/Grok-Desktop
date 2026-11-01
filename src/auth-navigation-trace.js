@@ -9,7 +9,7 @@ function redactNavigationUrl(value) {
   } catch (_) { return 'invalid'; }
 }
 
-function startAuthNavigationTrace(app, filename) {
+function startAuthNavigationTrace(app, filename, buildLabel = 'development') {
   const record = ({ url, ...entry }) => {
     try {
       fs.appendFileSync(filename, JSON.stringify({
@@ -18,7 +18,7 @@ function startAuthNavigationTrace(app, filename) {
       }) + '\n', { mode: 0o600 });
     } catch (_) { console.warn('Could not write authentication navigation trace'); }
   };
-  record({ kind: 'session-start', packaged: app.isPackaged });
+  record({ kind: 'session-start', packaged: app.isPackaged, build: buildLabel });
   app.on('web-contents-created', (_event, contents) => {
     for (const kind of ['will-navigate', 'will-redirect', 'did-start-navigation']) {
       contents.on(kind, (event, legacyUrl, _sameDocument, legacyMainFrame) => record({

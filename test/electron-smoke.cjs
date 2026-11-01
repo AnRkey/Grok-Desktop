@@ -167,7 +167,8 @@ const path = require('node:path');
           'https://accounts.google.co.za/accounts/SetSID?test=dummy',
           'https://accounts.google.com/signin/oauth/legacy/consent?test=dummy',
           'https://grok.com/api/auth/oauth/callback?test=dummy',
-          'https://auth.grok.com/set-cookie?test=dummy'
+          'https://auth.grok.com/set-cookie?test=dummy',
+          'https://auth.grokusercontent.com/set-cookie?test=dummy'
         ];
         const modern = chain.map(url => emit('will-redirect', url));
         const legacy = chain.map(url => emit('will-redirect', url, true, true));
@@ -178,13 +179,32 @@ const path = require('node:path');
         return { modern, legacy, frame, unknown, noEscapedRedirect, direct, external };
       } finally { shell.openExternal = original; }
     });
-    assert.deepEqual(navigation.modern, Array(6).fill(false));
-    assert.deepEqual(navigation.legacy, Array(6).fill(false));
+    assert.deepEqual(navigation.modern, Array(7).fill(false));
+    assert.deepEqual(navigation.legacy, Array(7).fill(false));
     assert.equal(navigation.frame, false);
     assert.equal(navigation.unknown, true);
     assert.equal(navigation.noEscapedRedirect, true);
     assert.equal(navigation.direct, true);
     assert.deepEqual(navigation.external, ['https://example.org/article']);
+    const finalGuard = await app.evaluate(async ({ shell, webContents, Menu, ipcMain }) => {
+      const originalShell = shell.openExternal;
+      const originalMenu = Menu.buildFromTemplate;
+      const external = [];
+      shell.openExternal = async url => { external.push(url); };
+      try {
+        const url = 'https://accounts.youtube.com/accounts/SetSID?test=dummy';
+        const guest = webContents.getAllWebContents().find(wc => wc.getType() === 'webview');
+        let template;
+        Menu.buildFromTemplate = items => { template = items; return { popup() {} }; };
+        guest.emit('context-menu', {}, { x: 10, y: 10, linkURL: url });
+        await template.find(item => item.label === 'Open Link in Browser').click();
+        return external;
+      } finally { shell.openExternal = originalShell; Menu.buildFromTemplate = originalMenu; }
+    });
+    assert.deepEqual(finalGuard, []);
+    assert.equal(await page.evaluate(() => window.desktop.invoke('open-external-url',
+      'https://accounts.youtube.com/accounts/SetSID?test=dummy')), false);
+
 
     await page.locator('#info-btn').click();
     await page.waitForFunction(() => document.querySelectorAll('.tab').length === 3 && document.querySelector('.tab.active .tab-title').textContent === 'About');
