@@ -9,3 +9,5 @@ Start the real app with `npm start`. Build Windows installers with `npm run buil
 Keep remote pages sandboxed and free of Node access. Add privileged operations to the preload allowlist and validate the sender in main. Use parsed URL policies for navigation and external browser requests. Test changes against the reported behavior and include clear reproduction and validation notes in commits or PRs.
 
 Version 1.3.0 is maintenance only. Feature PRs stay deferred. Do not tag, merge for release, or publish until John approves his VM test. See `docs/validation-1.3.0.md` and `docs/releases/1.3.0.md`.
+
+Deliver test installers directly in the root of `build/`. Before handing a build to John, clear out superseded deliverables and generated subdirectories so the current build is obvious. Preserve older outputs outside `build/` in ignored `.tmp/` when reversible cleanup is needed. Confirm installer hashes after moving files. Do not send John into nested build folders.

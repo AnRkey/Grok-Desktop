@@ -87,6 +87,13 @@ John confirmed the fresh EXE installer still escaped to YouTube SetSID in his VM
 
 A later workstation trace reached `auth.grokusercontent.com/set-cookie`; add only that exact host/path to the existing Grok cookie handoffs. A final external-browser policy now rejects all requests to known authentication hosts, including recognized regional Google hosts, regardless of whether they originate in navigation, popup, context menu or shell IPC. The regression suite exercises the captured redirect chain and the context-menu/IPC escape paths with dummy query values.
 
-The next diagnostic installers live in `build/google-login-test-2/`, named `Grok-Desktop_Installer-v1.3.0-google-login-test-2.exe` and `.msi`. They retain source version 1.3.0, use Windows build version 1.3.0.2, and show **Grok Desktop - Google login test 2** in the window title. Test-only packaged metadata enables redacted navigation logs by default; normal release builds remain opt-in. Session-start logs identify the test build, and external-browser attempts identify navigation/popup/context-menu origin using sanitized source paths.
+The next diagnostic installers live in `build/`, named `Grok-Desktop_Installer-v1.3.0-google-login-test-2.exe` and `.msi`. They retain source version 1.3.0, use Windows build version 1.3.0.2, and show **Grok Desktop - Google login test 2** in the window title. Test-only packaged metadata enables redacted navigation logs by default; normal release builds remain opt-in. Session-start logs identify the test build, and external-browser attempts identify navigation/popup/context-menu origin using sanitized source paths.
 
 No workstation cookie profile is changed or bundled. Ask for the VM's `auth-navigation.jsonl` from the app's AppData profile if login still fails; never request full session URLs or verification-code screenshots. Public release remains held until authenticated VM approval.
+
+
+### Current delivery location
+
+John explained that putting the latest installers in nested build directories caused him to miss them and select the older root installer. Current Google login test 2 EXE, MSI, blockmap, latest.yml and SHA256SUMS.txt are now directly in `build/`; no subdirectories remain there. Their SHA-256 values are unchanged: EXE `9d35b416e58bf12fc24a70a2d7d8258dae8c1f3d3d3ab08332339d49cb25e2c6`, MSI `1e25c8c6118f5cce1f9437c1154fb3acb1d3c7ccb336b0a51f6c19c3fdc6194a`.
+
+Automatic approval review rejected broad deletion because it classified some generated outputs as potentially unrelated. The approved reversible alternative moved the explicitly inventoried older root files and build subdirectories to ignored `.tmp/retired-build-output-20261101/`, retaining all prior artifacts outside the delivery folder. No cookie/profile locations were included. Future test handoffs must use the root of `build/` and remove obsolete delivery choices from it.
