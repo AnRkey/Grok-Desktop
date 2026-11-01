@@ -29,11 +29,13 @@ jobs:
         run: npm run test:electron
       - name: Electron runtime checks (Linux)
         if: runner.os == 'Linux'
+        env:
+          GROK_DISABLE_GPU: 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y openbox
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
-          xvfb-run -a sh -c 'openbox >/tmp/grok-openbox.log 2>&1 & npm run test:electron'
+          dbus-run-session -- xvfb-run -a sh -c 'openbox >/tmp/grok-openbox.log 2>&1 & npm run test:electron'
       - name: Windows packages
         if: runner.os == 'Windows'
         run: npm run build
