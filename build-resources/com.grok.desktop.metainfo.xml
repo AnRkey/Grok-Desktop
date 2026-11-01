@@ -45,8 +45,8 @@
     <binary>grok-desktop</binary>
   </provides>
   <releases>
-    <release version="1.3.0" type="development">
-      <description><p>Electron 45.2.1 security update, complete in-app authentication and sign-out, tab fixes, renderer isolation, reliable AOT state and contributor credits; Windows VM authentication verified, publication paused.</p></description>
+    <release version="1.3.0" date="2026-11-01" type="stable">
+      <description><p>Electron 45.2.1 security update, complete in-app authentication and sign-out, tab fixes, renderer isolation, reliable AOT state and contributor credits.</p></description>
     </release>
     <release version="1.2.5" date="2025-12-17">
       <description>

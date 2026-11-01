@@ -1,4 +1,4 @@
-# Grok-Desktop v1.3.0 (release prepared)
+# Grok-Desktop v1.3.0
 
 ## Description
 Grok-Desktop is an Electron-based desktop application for Windows 10/11 and Linux that wraps `grok.com`, providing desktop-application-like access to Grok with real-time API usage monitoring, multi-tab support, and authentication for xAI/X, Google, Apple and GitHub accounts.
@@ -30,7 +30,7 @@ Grok-Desktop is an Electron-based desktop application for Windows 10/11 and Linu
 
 ## Download
 
-Version 1.3.0 has passed the maintainer's Windows VM authentication and sign-out checks. Publication is paused at his request. The nine versioned links below are prepared for 1.3.0 and will become available when it is published; [v1.2.5 remains the current public release](https://github.com/AnRkey/Grok-Desktop/releases/tag/v1.2.5).
+Version 1.3.0 includes the maintainer's verified Windows VM authentication and sign-out fixes. Download one of the nine Windows/Linux packages below.
 
 ### Windows
 - [Grok-Desktop_Installer-v1.3.0.exe](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.3.0/Grok-Desktop_Installer-v1.3.0.exe) - Windows installer (EXE)
@@ -52,7 +52,7 @@ All packages target x64. The ZIP/7z/tar.gz files contain the unpacked applicatio
 ### For Using the Application
 - **Operating System**: Windows 10/11 or Linux (Rocky Linux 9/10, RHEL 9, Ubuntu, Fedora, etc.)
 - **Internet connection** for accessing grok.com
-- **Grok account** (sign up in-app or use Google/Apple/xAI authentication)
+- **Grok account** (sign up in-app or use xAI/X, Google, Apple or GitHub authentication)
 - **Linux AOT (Always-on-Top) requirement**: Install `wmctrl` for Always-on-Top functionality:
   - Rocky Linux/RHEL/Fedora: `sudo dnf install wmctrl`
   - Ubuntu/Debian: `sudo apt install wmctrl`
@@ -138,7 +138,7 @@ npm run build-all
 ## Installation
 
 ### Windows
-1. Download and run `Grok-Desktop_Installer-v1.3.0.exe` from the releases page once 1.3.0 is published
+1. Download and run `Grok-Desktop_Installer-v1.3.0.exe` from the releases page
 2. Follow the installation wizard
 3. Launch "Grok Desktop" from the Start Menu
 
@@ -328,7 +328,7 @@ sudo dnf install wmctrl    # Rocky Linux/RHEL/Fedora
 sudo apt install wmctrl    # Ubuntu/Debian
 ```
 
-### Recent Changes (v1.3.0 prepared release)
+### Recent Changes (v1.3.0)
 - Electron 45.2.1, patched build dependencies, renderer isolation and guarded IPC
 - In-app Google, Apple, X and GitHub sign-in and complete Grok sign-out
 - Restored Inspect Element and background tabs for Grok search results
@@ -339,13 +339,13 @@ For complete changelog, see [CHANGELOG.md](CHANGELOG.md).
 
 ## Changelog Summary
 
-### v1.3.0 (Prepared; publication paused)
+### v1.3.0 (Latest release)
 - Electron 45.2.1 and locked, audited build dependencies
 - Restored Inspect Element and internal background tabs for search results
 - Correct GPU detection on Windows; AOT starts off and reflects window state
 - Isolated renderers, guarded IPC, parsed URL checks and consent for Grok media access
 
-### v1.2.5 (Public release until 1.3.0 is published)
+### v1.2.5
 - 🐛 **Bug Fix**: Fixed Usage Stats "Login required" error on Windows 11
   - Resolved 403 API errors by executing fetch in authenticated webview context
   - Thanks to Joshua Wang (@JoshuaWang2211) for the bug report and solution
@@ -396,4 +396,4 @@ The `grok.ico` application icon was sourced online and converted for use in this
 
 ---
 
-**Grok-Desktop v1.3.0 (release prepared)** - Making Grok accessible everywhere! 🚀
+**Grok-Desktop v1.3.0** - Making Grok accessible everywhere! 🚀

@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
 
-## [1.3.0] - Unreleased (VM verified; publication paused)
+## [1.3.0] - 2026-11-01
 
 ### Fixed
 - Finish Grok sign-out through the final Grokipedia cookie-deletion handoff so the tab can return to the signed-out page.
@@ -34,7 +34,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 - Credit contributors by their GitHub handles on the in-app About page.
-- Source version 1.3.0; VM verification completed and publication paused at the maintainer's request.
+- Version 1.3.0; Windows VM authentication/sign-out verified and publication approved by the maintainer.
 - Require Node.js 24 for development; correct package license metadata to GPL-2.0-only.
 - Build scripts use local electron-builder 26.18.0 with publication disabled.
 - Add independent policy and Electron runtime regression checks and development build artifacts.
@@ -115,8 +115,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ### Added
 - Initial pre-release of Grok Desktop
 
- [Unreleased]: https://github.com/AnRkey/Grok-Desktop/compare/v1.2.5...development
-[1.3.0]: https://github.com/AnRkey/Grok-Desktop/compare/v1.2.5...development
+ [Unreleased]: https://github.com/AnRkey/Grok-Desktop/compare/v1.3.0...development
+[1.3.0]: https://github.com/AnRkey/Grok-Desktop/compare/v1.2.5...v1.3.0
 [1.2.5]: https://github.com/AnRkey/Grok-Desktop/releases/tag/v1.2.5
 [1.2.4]: https://github.com/AnRkey/Grok-Desktop/releases/tag/v1.2.4
 [1.2.3]: https://github.com/AnRkey/Grok-Desktop/releases/tag/v1.2.3

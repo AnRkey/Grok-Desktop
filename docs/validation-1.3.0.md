@@ -1,6 +1,6 @@
 # Version 1.3.0 validation and handoff
 
-Current status: John Mitchell confirmed all four sign-in providers and Grok sign-out in his Windows VM. He authorized release preparation, chose nine package/archive types, then explicitly paused publication. No release/tag/main merge has occurred; wait for him to resume publication. Final packages must include the updated About contributor credits. Feature PRs #23, #27, #28 and #30 remain untouched. The chronological results below retain their original test/build context.
+Current status: John Mitchell confirmed all four sign-in providers and Grok sign-out in his Windows VM, chose nine package/archive types, and explicitly resumed publication with "verify your work then release this version." Final release verification and publication are authorized. Release builds include the updated About contributor credits. Feature PRs #23, #27, #28 and #30 remain untouched. The chronological results below retain their original test/build context.
 
 ## Baseline security review
 
