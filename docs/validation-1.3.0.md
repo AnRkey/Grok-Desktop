@@ -92,7 +92,7 @@ The next diagnostic installers live in `build/`, named `Grok-Desktop_Installer-v
 No workstation cookie profile is changed or bundled. Ask for the VM's `auth-navigation.jsonl` from the app's AppData profile if login still fails; never request full session URLs or verification-code screenshots. Public release remains held until authenticated VM approval.
 
 
-### Current delivery location
+### Test 2 delivery location (superseded)
 
 John explained that putting the latest installers in nested build directories caused him to miss them and select the older root installer. Current Google login test 2 EXE, MSI, blockmap, latest.yml and SHA256SUMS.txt are now directly in `build/`; no subdirectories remain there. Their SHA-256 values are unchanged: EXE `9d35b416e58bf12fc24a70a2d7d8258dae8c1f3d3d3ab08332339d49cb25e2c6`, MSI `1e25c8c6118f5cce1f9437c1154fb3acb1d3c7ccb336b0a51f6c19c3fdc6194a`.
 
@@ -106,3 +106,13 @@ John supplied the redacted `auth-navigation.jsonl` from the correctly labeled te
 Test 3 permits only the exact HTTPS host/path `auth.x.ai/set-cookie` and also keeps that authentication host out of every OS-browser route. A regression fixture contains the full nine-hop redacted sequence from the user's log. The new Node test failed specifically on auth.x.ai before the policy change and passes after it; current and legacy Electron navigation handlers replay that same fixture. The fixture contains no real query values, credentials or 2FA codes.
 
 Build version 1.3.0.3 uses test-only metadata Google login test 3 with redacted diagnostics on. Fresh EXE/MSI names contain `google-login-test-3` and are delivered directly in `build/`; superseded test 2 outputs and transient packaging directories are archived outside build. Version 1.3.0 remains unpublished. The VM must verify that the original login tab returns to signed-in Grok without opening another tab.
+
+
+### Current delivery: Google login test 3
+
+The actual NSIS EXE payload was extracted and verified to match the fixed source URL policy exactly, including auth.x.ai/set-cookie, with Google login test 3 metadata and diagnostics enabled. It contains no profiles, cookies or trace files. Both EXE and MSI completed successfully; all temporary packaging folders and superseded test 2 artifacts were archived outside build, leaving only current files directly in build root.
+
+- EXE: `build/Grok-Desktop_Installer-v1.3.0-google-login-test-3.exe`; SHA-256 `d3d7bc45a913320987986394c09626675c0111221482598c542c46d20cffb18a`.
+- MSI: `build/Grok-Desktop_Installer-v1.3.0-google-login-test-3.msi`; SHA-256 `3456a47dfdf5ad5ba12ac40016b4daf0c5e56054b23e45ceb33e057de6ab1ba9`.
+
+Implementation commit b24d13c is pushed on development. Node tests pass 7/7 and npm audit has zero findings. Windows Electron runtime checks passed. The first Linux run lost the native browser during popup/virtual-display setup; CI-only commit 615daa4 uses an isolated D-Bus session and explicit software rendering for Xvfb. Both Windows and Linux Node/Electron runtime checks then passed in [run 41334593920](https://github.com/AnRkey/Grok-Desktop/actions/runs/41334593920); remote package creation may still be in progress at handoff. Authenticated original-tab completion remains for John's test VM. Nothing is publicly released or tagged.
