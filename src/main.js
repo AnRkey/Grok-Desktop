@@ -2,57 +2,17 @@
 const { app, BrowserWindow, shell, Menu, ipcMain, nativeTheme, session, webContents, dialog } = require('electron');
 const os = require('os');
 const fs = require('fs');
-const { exec } = require('child_process');
+const { execFile } = require('child_process');
+const { pathToFileURL } = require('url');
+const { isInternalUrl, isGrokUrl, isExternalUrl, shouldDisableGpu } = require('./url-policy');
 
 // GPU acceleration detection and graceful fallback
 function configureGpuAcceleration() {
-  // Check if we're in a headless environment or container
-  const isHeadless = !process.env.DISPLAY && !process.env.WAYLAND_DISPLAY;
-  const isContainer = fs.existsSync('/.dockerenv') || process.env.container === 'docker';
-
-  // Check for NVIDIA/AMD GPU availability (basic detection)
-  let hasGpu = false;
-  try {
-    // Check for NVIDIA GPU
-    if (fs.existsSync('/dev/nvidia0') || process.env.NVIDIA_VISIBLE_DEVICES) {
-      hasGpu = true;
-    }
-    // Check for AMD GPU
-    if (fs.existsSync('/dev/dri/card0')) {
-      hasGpu = true;
-    }
-  } catch (e) {
-    // Ignore errors in GPU detection
-  }
-
-  // Disable GPU acceleration if:
-  // 1. In headless environment
-  // 2. In container without GPU passthrough
-  // 3. No GPU detected
-  // 4. Explicitly requested via environment variable
-  const isLinux = process.platform === 'linux';
-  const shouldDisableGpu = process.env.GROK_DISABLE_GPU === 'true' || (isLinux && (isHeadless || (isContainer && !hasGpu)));
-
-  if (shouldDisableGpu) {
-    console.log('Grok Desktop: Disabling GPU acceleration for compatibility');
+  if (shouldDisableGpu(process.platform, process.env, fs.existsSync)) {
     app.disableHardwareAcceleration();
-
-    // Additional GPU-related switches for better compatibility
-    app.commandLine.appendSwitch('disable-gpu-compositing');
-    app.commandLine.appendSwitch('disable-accelerated-video-decode');
-    app.commandLine.appendSwitch('disable-accelerated-mjpeg-decode');
-
-    // Log the reason for transparency
-    const reasons = [];
-    if (isHeadless) reasons.push('headless environment');
-    if (isContainer && !hasGpu) reasons.push('container without GPU');
-    if (!hasGpu) reasons.push('no GPU detected');
-    if (process.env.GROK_DISABLE_GPU === 'true') reasons.push('explicitly disabled');
-
-    console.log(`Grok Desktop: GPU acceleration disabled due to: ${reasons.join(', ')}`);
-  } else {
-    console.log('Grok Desktop: GPU acceleration enabled');
+    console.log('Grok Desktop: GPU acceleration disabled for compatibility');
   }
+
 }
 
 // Configure GPU acceleration before app initialization
@@ -103,10 +63,9 @@ function handleGpuAcceleration() {
   }
 
   // Listen for GPU process crashes or initialization errors
-  app.on('gpu-process-crashed', (event, killed) => {
-    if (!killed && !gpuDisabled && !restartAttempted) {
+  app.on('child-process-gone', (_event, details) => {
+    if (details.type === 'GPU' && details.reason !== 'clean-exit' && details.reason !== 'killed' && !gpuDisabled && !restartAttempted) {
       console.warn('GPU process crashed, attempting to restart with GPU acceleration disabled');
-      event.preventDefault();
       restartWithGpuDisabled();
     }
   });
@@ -131,8 +90,6 @@ function restartWithGpuDisabled() {
   if (restartAttempted) return;
   restartAttempted = true;
 
-  // Disable hardware acceleration for next start
-  app.disableHardwareAcceleration();
 
   // Show a brief notification to user about fallback mode
   console.log('Restarting Grok Desktop with GPU acceleration disabled for compatibility...');
@@ -145,66 +102,32 @@ function restartWithGpuDisabled() {
 // Initialize GPU handling before app setup
 handleGpuAcceleration();
 
-// Handle open-external-url from renderer with enhanced validation
-ipcMain.handle('open-external-url', async (_event, url) => {
-  try {
-    // Basic type and protocol validation
-    if (typeof url !== 'string' || !url.startsWith('http')) {
-      return false;
+// Only the local application shell may invoke privileged IPC.
+function handleTrusted(channel, handler) {
+  ipcMain.handle(channel, (event, ...args) => {
+    if (!mainWindow || event.sender !== mainWindow.webContents ||
+        event.senderFrame !== mainWindow.webContents.mainFrame ||
+        event.senderFrame.url !== pathToFileURL(path.join(__dirname, '../index.html')).href) {
+      throw new Error('Untrusted IPC sender');
     }
+    return handler(event, ...args);
+  });
+}
 
-    // Parse URL to validate format and prevent malicious schemes
-    const urlObj = new URL(url);
+async function openExternalUrl(url) {
+  if (!isExternalUrl(url)) return false;
+  try { await shell.openExternal(url); return true; }
+  catch (_) { return false; }
+}
 
-    // Ensure it's HTTP or HTTPS (not javascript:, data:, etc.)
-    if (!['http:', 'https:'].includes(urlObj.protocol)) {
-      return false;
-    }
-
-    // Basic URL validation - ensure hostname exists and is reasonable
-    if (!urlObj.hostname || urlObj.hostname.length === 0 || urlObj.hostname.length > 253) {
-      return false;
-    }
-
-    // Prevent localhost/private IP access for external URLs
-    const hostname = urlObj.hostname.toLowerCase();
-    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0' ||
-        hostname.startsWith('192.168.') || hostname.startsWith('10.') ||
-        hostname.startsWith('172.')) {
-      return false;
-    }
-
-    await shell.openExternal(url);
-    return true;
-  } catch (error) {
-    // Invalid URL format
-    return false;
-  }
-});
+handleTrusted('open-external-url', (_event, url) => openExternalUrl(url));
 const path = require('path');
 
 // Keep a global reference of the window object to prevent garbage collection
 let mainWindow;
-let aboutWindow;
 
 // Allow autoplay without user gesture (for seamless audio playback)
 try { app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required'); } catch (_) {}
-
-// Define the allowed URL patterns for internal handling with secure domain validation
-const allowedUrlPatterns = [
-  // Allow grok.com domain and all its paths (for normal browsing), but not as subdomain
-  /^https?:\/\/grok\.com(?:\/|$)/,
-  // Allow x.ai domain and all its paths (for normal browsing), but not as subdomain
-  /^https?:\/\/x\.ai(?:\/|$)/,
-  // Allow x.com domain for OAuth flows (but not as subdomain)
-  /^https?:\/\/x\.com(?:\/|$)/,
-  // Allow accounts.x.ai domain and auth-related paths (but not as subdomain)
-  /^https?:\/\/accounts\.x\.ai(?:\/|$)/,
-  // Allow accounts.google.com domain and OAuth paths (but not as subdomain)
-  /^https?:\/\/accounts\.google\.com(?:\/|$)/,
-  // Allow appleid.apple.com domain and OAuth paths (but not as subdomain)
-  /^https?:\/\/appleid\.apple\.com(?:\/|$)/
-];
 
 // Enforce single instance
 const gotSingleInstanceLock = app.requestSingleInstanceLock();
@@ -222,6 +145,7 @@ if (!gotSingleInstanceLock) {
 
 // Track webContents that should always use light color scheme
 const forcedLightWebContentsIds = new Set();
+const guestHosts = new Map();
 
 // Always On Top (AOT) functionality for cross-platform compatibility
 // Windows: Uses Electron's built-in setAlwaysOnTop() method
@@ -250,7 +174,7 @@ function checkWmctrlAvailability() {
   }
 
   // Check if wmctrl is available (install with: sudo dnf install wmctrl on Rocky Linux)
-  exec('which wmctrl', (error) => {
+  execFile('which', ['wmctrl'], (error) => {
     wmctrlAvailable = !error;
     if (wmctrlAvailable) {
       console.log('Grok Desktop: wmctrl available for AOT fallback');
@@ -274,27 +198,13 @@ function forceX11Mode() {
 }
 
 // Fallback AOT toggle using wmctrl on Linux
-function toggleAlwaysOnTopLinux(mainWindow) {
-  if (!wmctrlAvailable) return false;
-
+function toggleAlwaysOnTopLinux(window, enabled) {
   return new Promise((resolve) => {
-    // Get the window title to target it specifically
-    const windowTitle = mainWindow.getTitle() || 'Grok Desktop';
-
-    // First focus the window, then toggle always-on-top
-    const commands = [
-      `wmctrl -a "${windowTitle}"`,  // Focus/activate the window
-      `wmctrl -r "${windowTitle}" -b toggle,above`  // Toggle always-on-top
-    ];
-
-    exec(commands.join(' && '), (error) => {
-      if (error) {
-        console.warn('Grok Desktop: wmctrl AOT toggle failed:', error.message);
-        resolve(false);
-      } else {
-        console.log('Grok Desktop: AOT toggled via wmctrl');
-        resolve(true);
-      }
+    const handle = window.getNativeWindowHandle();
+    const id = `0x${handle.readUInt32LE(0).toString(16)}`;
+    execFile('wmctrl', ['-i', '-r', id, '-b', `${enabled ? 'add' : 'remove'},above`], (error) => {
+      if (error) console.warn('Grok Desktop: wmctrl AOT fallback failed:', error.message);
+      resolve(!error);
     });
   });
 }
@@ -307,8 +217,10 @@ function createWindow() {
     minWidth: 800,
     minHeight: 600,
     webPreferences: {
-      nodeIntegration: true, // Enable Node.js integration
-      contextIsolation: false, // Disable context isolation for this use case
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+      preload: path.join(__dirname, 'preload.js'),
       webviewTag: true, // Enable webview tag for tabs
       spellcheck: true
     },
@@ -321,8 +233,6 @@ function createWindow() {
   // Disable the menu bar
   Menu.setApplicationMenu(null);
 
-  // Ensure shortcuts work when focus is on the main window UI
-  try { attachShortcutHandlers(mainWindow.webContents); } catch (_) {}
 
   // Load the index.html file
   mainWindow.loadFile(path.join(__dirname, '../index.html'));
@@ -390,21 +300,6 @@ function createWindow() {
     mainWindow = null;
   });
 
-  // Set up URL handling
-  setupUrlHandling();
-
-  // Set up IPC handlers
-  setupIpcHandlers();
-
-  // Set up WebRTC/media permissions (allow across all domains)
-  setupPermissions();
-
-  // Enable right-click context menus
-  setupContextMenus();
-
-  // Set up keyboard shortcuts (Ctrl+T, Ctrl+Tab, Ctrl+R)
-  setupKeyboardShortcuts();
-
   // Ensure newly created webContents/webviews get correct color scheme
   app.on('web-contents-created', (_event, contents) => {
     const scheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
@@ -429,6 +324,11 @@ function createWindow() {
 
 // Create window when Electron has finished initialization
 app.whenReady().then(() => {
+  setupUrlHandling();
+  setupIpcHandlers();
+  setupPermissions();
+  setupContextMenus();
+  setupKeyboardShortcuts();
   checkWmctrlAvailability();
   createWindow();
 
@@ -445,15 +345,47 @@ app.on('window-all-closed', () => {
 
 // Handle URL navigation and determine if URLs should be opened internally
 function setupUrlHandling() {
-  // Handle navigation events from webContents
-  app.on('web-contents-created', (event, contents) => {
-    // Intercept new window requests; always deny BrowserWindow creation
-    // Internal domains will be handled by the renderer's webview 'new-window' handler
-    contents.setWindowOpenHandler(({ url }) => {
-      const isInternal = allowedUrlPatterns.some(pattern => pattern.test(url));
-      if (!isInternal) {
-        shell.openExternal(url);
+  const aboutUrl = pathToFileURL(path.join(__dirname, '../about.html')).href;
+  app.on('web-contents-created', (_event, contents) => {
+    contents.on('did-attach-webview', (_event, guest) => {
+      guestHosts.set(guest.id, contents);
+      guest.once('destroyed', () => { guestHosts.delete(guest.id); forcedLightWebContentsIds.delete(guest.id); });
+    });
+    contents.on('will-attach-webview', (event, preferences, params) => {
+      if (!isInternalUrl(params.src) && params.src.split('?')[0] !== aboutUrl) {
+        event.preventDefault();
+        return;
       }
+      delete preferences.preload;
+      preferences.nodeIntegration = false;
+      preferences.nodeIntegrationInWorker = false;
+      preferences.contextIsolation = true;
+      preferences.sandbox = true;
+      preferences.webSecurity = true;
+    });
+    const guardNavigation = (event, url) => {
+      if (contents === mainWindow?.webContents || !isInternalUrl(url)) {
+        event.preventDefault();
+        if (contents !== mainWindow?.webContents) void openExternalUrl(url);
+      }
+    };
+    contents.on('will-navigate', guardNavigation);
+    contents.on('will-redirect', guardNavigation);
+    contents.setWindowOpenHandler(({ url }) => {
+      if (isGrokUrl(url)) {
+        mainWindow?.webContents.send('open-internal-tab', url, true);
+        return { action: 'deny' };
+      }
+      if (isInternalUrl(url)) {
+        // OAuth providers can use window.opener; keep a real, isolated popup
+        // in the same persistent session rather than discarding the request.
+        return { action: 'allow', overrideBrowserWindowOptions: {
+          parent: mainWindow, autoHideMenuBar: true, width: 700, height: 800,
+          webPreferences: { session: contents.session, nodeIntegration: false,
+            contextIsolation: true, sandbox: true, webviewTag: false }
+        } };
+      }
+      void openExternalUrl(url);
       return { action: 'deny' };
     });
   });
@@ -463,38 +395,36 @@ function setupUrlHandling() {
 function setupIpcHandlers() {
   // Handle always-on-top toggle
   // Read current always-on-top state
-  ipcMain.handle('get-always-on-top', () => {
+  handleTrusted('get-always-on-top', () => {
     if (!mainWindow || mainWindow.isDestroyed()) return false;
     try { return mainWindow.isAlwaysOnTop(); } catch (_) { return false; }
   });
 
-  ipcMain.handle('toggle-always-on-top', async () => {
+  handleTrusted('toggle-always-on-top', async () => {
     if (!mainWindow) return false;
 
-    // On Linux, use wmctrl if available for better GNOME compatibility
-    if (os.platform() === 'linux') {
-      if (wmctrlAvailable) {
-        const result = await toggleAlwaysOnTopLinux(mainWindow);
-        if (result) return true;
-      } else {
-        console.warn('Grok Desktop: wmctrl not available on Linux, AOT may not work');
-      }
-      // Fall back to Electron method if wmctrl fails or isn't available
-    }
-
-    // Use Electron's built-in method (works on Windows/macOS, may not work reliably on Linux GNOME/Wayland)
+    const enabled = !mainWindow.isAlwaysOnTop();
     try {
-      const isAlwaysOnTop = mainWindow.isAlwaysOnTop();
-      mainWindow.setAlwaysOnTop(!isAlwaysOnTop);
-      return !isAlwaysOnTop;
+      const window = mainWindow;
+      await new Promise(resolve => {
+        const done = () => { clearTimeout(timeout); window.removeListener('always-on-top-changed', done); resolve(); };
+        const timeout = setTimeout(done, 500);
+        window.once('always-on-top-changed', done);
+        // Electron 45's default floating level does not pin Windows windows.
+        window.setAlwaysOnTop(enabled, process.platform === 'win32' ? 'normal' : 'floating');
+      });
+      if (os.platform() === 'linux' && wmctrlAvailable) {
+        await toggleAlwaysOnTopLinux(mainWindow, enabled);
+      }
+      return mainWindow.isAlwaysOnTop();
     } catch (error) {
-      console.warn('Grok Desktop: Electron AOT toggle failed:', error.message);
-      return false;
+      console.warn('Grok Desktop: AOT toggle failed:', error.message);
+      return mainWindow.isAlwaysOnTop();
     }
   });
 
   // Provide app version to renderer
-  ipcMain.handle('get-app-version', () => {
+  handleTrusted('get-app-version', () => {
     try {
       return app.getVersion();
     } catch (_) {
@@ -503,13 +433,13 @@ function setupIpcHandlers() {
   });
 
   // Open About page in a new tab instead of a window
-  ipcMain.handle('show-app-info', async () => {
+  handleTrusted('show-app-info', async () => {
     const name = typeof app.getName === 'function' ? app.getName() : 'Grok Desktop';
     const version = typeof app.getVersion === 'function' ? app.getVersion() : '0.0.0';
     const repoUrl = 'https://github.com/AnRkey/Grok-Desktop';
 
     // Build the about page URL with parameters
-    const urlObj = new URL(`file://${path.join(__dirname, '../about.html')}`);
+    const urlObj = pathToFileURL(path.join(__dirname, '../about.html'));
     urlObj.searchParams.set('name', name);
     urlObj.searchParams.set('version', version);
     urlObj.searchParams.set('repo', repoUrl);
@@ -538,14 +468,14 @@ function setupIpcHandlers() {
   // Fixed: Execute fetch inside the webview's context (where user is logged in)
   // to avoid 403 errors from session.fetch() in main process
   // Thanks to Joshua for identifying the root cause and suggesting this solution!
-  ipcMain.handle('fetch-grok-rate-limits', async () => {
+  handleTrusted('fetch-grok-rate-limits', async (_event, activeId) => {
     try {
       // Find the active Grok webview's webContents
       const allContents = webContents.getAllWebContents();
       const grokWebview = allContents.find(wc => {
         try {
           const url = wc.getURL();
-          return url.includes('grok.com') && !url.includes('about.html');
+          return wc.id === activeId && wc.getType() === 'webview' && isGrokUrl(url);
         } catch (e) {
           return false;
         }
@@ -597,10 +527,10 @@ function setupIpcHandlers() {
   });
 
   // Force light/dynamic color scheme for specific webContents id
-  ipcMain.handle('force-light-color-scheme', (_event, wcId, shouldForceLight) => {
+  handleTrusted('force-light-color-scheme', (_event, wcId, shouldForceLight) => {
     try {
       const wc = webContents.fromId(wcId);
-      if (!wc) return false;
+      if (!wc || wc.getType() !== 'webview' || guestHosts.get(wc.id) !== mainWindow.webContents) return false;
       if (shouldForceLight) {
         forcedLightWebContentsIds.add(wcId);
         if (typeof wc.setColorScheme === 'function') wc.setColorScheme('light');
@@ -668,7 +598,7 @@ function setupContextMenus() {
       if (params.linkURL) {
         template.push({
           label: 'Open Link in Browser',
-          click: () => shell.openExternal(params.linkURL)
+          click: () => openExternalUrl(params.linkURL)
         });
       }
 
@@ -707,50 +637,50 @@ function setupContextMenus() {
       );
 
 
-      const menu = Menu.buildFromTemplate(template);
       const win = BrowserWindow.fromWebContents(contents);
-      if (win) menu.popup({ window: win });
+      template.push({ label: 'Inspect Element', click: () => contents.inspectElement(params.x, params.y) });
+      const inspectMenu = Menu.buildFromTemplate(template);
+      inspectMenu.popup({ window: win || mainWindow });
     });
   });
 }
 
-// Allow all media-related permissions for all domains (both default and persist:grok sessions)
+// Grant voice/camera access only to Grok after the user agrees.
 function setupPermissions() {
-  const enableForSession = (targetSession) => {
-    if (!targetSession) return;
-    try {
-      // Always grant permission checks
-      if (typeof targetSession.setPermissionCheckHandler === 'function') {
-        targetSession.setPermissionCheckHandler(() => true);
+  const permissions = new Set(['media', 'fullscreen', 'clipboard-sanitized-write']);
+  for (const target of [session.defaultSession, session.fromPartition('persist:grok')]) {
+    target.setPermissionCheckHandler((_wc, permission, origin) =>
+      isGrokUrl(origin) && permissions.has(permission));
+    target.setPermissionRequestHandler(async (wc, permission, callback, details) => {
+      if (!isGrokUrl(details.requestingUrl || wc.getURL()) || !permissions.has(permission)) {
+        callback(false);
+        return;
       }
-      // Always grant runtime permission requests
-      if (typeof targetSession.setPermissionRequestHandler === 'function') {
-        targetSession.setPermissionRequestHandler((_wc, _permission, callback, _details) => {
-          try { callback(true); } catch (_) {}
+      if (permission !== 'media') { callback(true); return; }
+      try {
+        const result = await dialog.showMessageBox(mainWindow, {
+          type: 'question', buttons: ['Block', 'Allow'], defaultId: 0, cancelId: 0,
+          message: 'Allow grok.com to use your microphone or camera?',
+          detail: `Requested: ${(details.mediaTypes || ['media']).join(', ')}`
         });
-      }
-      // Best-effort: allow device and display capture if supported by current Electron
-      if (typeof targetSession.setDevicePermissionHandler === 'function') {
-        targetSession.setDevicePermissionHandler(() => true);
-      }
-      if (typeof targetSession.setDisplayMediaRequestHandler === 'function') {
-        targetSession.setDisplayMediaRequestHandler((_wc, request, callback) => {
-          // Approve requested audio/video capture; defer exact source selection to default behavior
-          try { callback({ video: !!request.video, audio: !!request.audio }); } catch (_) {}
-        });
-      }
-    } catch (_) {}
-  };
-
-  try { enableForSession(session.defaultSession); } catch (_) {}
-  try { enableForSession(session.fromPartition('persist:grok')); } catch (_) {}
-
-  // Ensure any future sessions/webviews also have audio unmuted
-  try {
-    app.on('web-contents-created', (_event, contents) => {
-      try { if (typeof contents.setAudioMuted === 'function') contents.setAudioMuted(false); } catch (_) {}
+        callback(result.response === 1);
+      } catch (_) { callback(false); }
     });
-  } catch (_) {}
+    target.setDevicePermissionHandler(() => false);
+    target.setDisplayMediaRequestHandler(async (request, callback) => {
+      if (!isGrokUrl(request.frame?.url)) { callback({}); return; }
+      try {
+        const { desktopCapturer } = require('electron');
+        const sources = await desktopCapturer.getSources({ types: ['screen', 'window'] });
+        const result = await dialog.showMessageBox(mainWindow, {
+          type: 'question', buttons: ['Cancel', ...sources.map(source => source.name)],
+          defaultId: 0, cancelId: 0, message: 'Choose what to share with grok.com'
+        });
+        const source = sources[result.response - 1];
+        callback(source ? { video: source } : {});
+      } catch (_) { callback({}); }
+    });
+  }
 }
 
 // Keyboard shortcuts wired at the webContents level so they work in webviews too
@@ -769,7 +699,7 @@ function attachShortcutHandlers(contents) {
 
         const key = input.key;
         // Deliver to the hosting window (handles webviews as well)
-        const host = contents.hostWebContents || contents;
+        const host = guestHosts.get(contents.id) || contents;
         const win = BrowserWindow.fromWebContents(host);
         if (!win || win.isDestroyed()) return;
 

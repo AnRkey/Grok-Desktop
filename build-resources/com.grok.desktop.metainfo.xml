@@ -45,6 +45,9 @@
     <binary>grok-desktop</binary>
   </provides>
   <releases>
+    <release version="1.3.0" type="development">
+      <description><p>Electron security update, login and tab fixes, renderer isolation and reliable AOT state; awaiting VM approval.</p></description>
+    </release>
     <release version="1.2.5" date="2025-12-17">
       <description>
         <p>Bug fix: Resolved Usage Stats "Login required" error on Windows 11 (Issue #11)</p>

@@ -1,28 +1,20 @@
-const { ipcRenderer } = require('electron');
-
-// Since we're using nodeIntegration: true and contextIsolation: false,
-// we don't need to use contextBridge. Instead, we can expose our API
-// directly to the window object.
-
-window.api = {
-  // Send a message to the main process
-  send: (channel, data) => {
-    // Whitelist channels
-    const validChannels = ['tab-created', 'tab-closed', 'navigate-to-url', 'renderer-error', 'renderer-promise-rejection'];
-    if (validChannels.includes(channel)) {
-      ipcRenderer.send(channel, data);
-    }
+const { contextBridge, ipcRenderer } = require('electron');
+const invokeChannels = new Set([
+  'toggle-always-on-top', 'get-always-on-top', 'get-app-version',
+  'show-app-info', 'fetch-grok-rate-limits', 'force-light-color-scheme', 'open-external-url'
+]);
+const receiveChannels = new Set([
+  'system-theme-updated', 'open-about-tab', 'open-internal-tab',
+  'shortcut-new-tab', 'shortcut-next-tab', 'shortcut-prev-tab',
+  'shortcut-reload-tab', 'shortcut-show-info'
+]);
+contextBridge.exposeInMainWorld('desktop', {
+  invoke(channel, ...args) {
+    if (!invokeChannels.has(channel)) return Promise.reject(new Error('Unsupported request'));
+    return ipcRenderer.invoke(channel, ...args);
   },
-  // Receive a message from the main process
-  receive: (channel, func) => {
-    const validChannels = ['new-tab', 'close-tab', 'url-updated'];
-    if (validChannels.includes(channel)) {
-      // Deliberately strip event as it includes `sender` 
-      ipcRenderer.on(channel, (event, ...args) => func(...args));
-    }
-  },
-  // Get the version of the application
-  getVersion: () => {
-    return process.env.npm_package_version;
+  on(channel, callback) {
+    if (!receiveChannels.has(channel)) return;
+    ipcRenderer.on(channel, (_event, ...args) => callback(...args));
   }
-}; 
+});
