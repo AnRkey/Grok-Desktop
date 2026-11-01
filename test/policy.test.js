@@ -3,6 +3,24 @@ const assert = require('node:assert/strict');
 const { isInternalUrl, isGrokUrl, isExternalUrl, shouldDisableGpu } = require('../src/url-policy');
 const observedCookieHandoffs = require('./fixtures/google-cookie-handoffs.json');
 const cookieSignout = require('./fixtures/grok-cookie-signout.json');
+const githubAuth = require('./fixtures/github-auth-navigation.json');
+
+test('GitHub authentication stays in app while repository links open externally', () => {
+  for (const url of githubAuth) {
+    assert.equal(isInternalUrl(url), true, url);
+    if (new URL(url).hostname === 'github.com') assert.equal(isExternalUrl(url), false, url);
+  }
+  for (const url of ['https://github.com/AnRkey/Grok-Desktop', 'https://github.com/login-help',
+    'https://github.com/sessions-other', 'https://github.com/session/extra']) {
+    assert.equal(isInternalUrl(url), false, url);
+    assert.equal(isExternalUrl(url), true, url);
+  }
+  for (const url of ['http://github.com/login', 'https://github.com:444/login',
+    'https://github.com.evil.org/login', 'https://evil@github.com/login',
+    'https://github.com/AnRkey/login/oauth/authorize']) {
+    assert.equal(isInternalUrl(url), false, url);
+  }
+});
 
 test('sign-out may finish through the trusted cookie services in the same tab', () => {
   for (const url of cookieSignout) {

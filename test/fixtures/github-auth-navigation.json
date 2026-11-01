@@ -1,0 +1,12 @@
+[
+  "https://github.com/login/oauth/authorize?client_id=dummy&state=dummy",
+  "https://github.com/login?return_to=%2Flogin%2Foauth%2Fauthorize",
+  "https://github.com/session",
+  "https://github.com/sessions/two-factor",
+  "https://github.com/sessions/verified-device",
+  "https://grok.com/api/auth/oauth/callback?code=dummy&state=dummy",
+  "https://auth.grok.com/set-cookie",
+  "https://auth.grokusercontent.com/set-cookie",
+  "https://auth.x.ai/set-cookie",
+  "https://grok.com/"
+]

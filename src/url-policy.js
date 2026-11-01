@@ -31,9 +31,15 @@ function parseWebUrl(value) {
   } catch (_) { return null; }
 }
 
+function isGitHubAuthUrl(url) {
+  return url.hostname === 'github.com' && (url.pathname === '/login' ||
+    url.pathname.startsWith('/login/') || url.pathname === '/session' ||
+    url.pathname === '/sessions' || url.pathname.startsWith('/sessions/'));
+}
+
 function isInternalUrl(value) {
   const url = parseWebUrl(value);
-  return !!url && (INTERNAL_HOSTS.has(url.hostname) ||
+  return !!url && (INTERNAL_HOSTS.has(url.hostname) || isGitHubAuthUrl(url) ||
     AUTH_HANDOFF_PATHS.get(url.hostname)?.has(url.pathname) === true ||
     (GOOGLE_COOKIE_HOSTS.has(url.hostname) && GOOGLE_COOKIE_PATHS.has(url.pathname)));
 }
@@ -48,7 +54,7 @@ function isExternalUrl(value) {
   if (!url) return false;
   // Last line of defence for every OS-browser route, including context menus
   // and shell IPC. Authentication state belongs to the application's session.
-  if (AUTHENTICATION_HOSTS.has(url.hostname) || GOOGLE_COOKIE_HOSTS.has(url.hostname)) return false;
+  if (AUTHENTICATION_HOSTS.has(url.hostname) || GOOGLE_COOKIE_HOSTS.has(url.hostname) || isGitHubAuthUrl(url)) return false;
   const host = url.hostname.replace(/\.$/, '');
   // Do not hand local-network, numeric, or IPv6 addresses to the OS browser.
   return host.includes('.') && !/^[\d.]+$/.test(host) && !host.includes(':') &&

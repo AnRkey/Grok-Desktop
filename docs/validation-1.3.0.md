@@ -136,3 +136,13 @@ The completed NSIS EXE's embedded ASAR was extracted and verified against the cu
 - MSI: `build/Grok-Desktop_Installer-v1.3.0-google-login-test-4.msi`; SHA-256 `f78397bedfab4cc186b0addf1a68ccc9331367d1031e5820c72c0779ca0ec2b4`.
 
 Authenticated sign-out behavior still requires John's VM confirmation; automated handler replay does not establish real-service success. No workstation application was launched, installed or given a changed cookie profile for this build.
+
+### Authentication test 5: GitHub OAuth stays in app
+
+John confirms Apple and X authentication work in his VM. His supplied test 3 trace shows Apple returning through the Grok callback and all three cookie services to the original Grok tab. It also identifies the GitHub escape at 18:19:40 UTC: direct navigation to `https://github.com/login/oauth/authorize` was blocked internally and handed to the OS browser. This report is independent of test 4's still-pending sign-out verification.
+
+Allow only the exact github.com HTTPS host and its `/login`, `/login/…`, `/session`, `/sessions` and `/sessions/…` authentication paths inside the app, and reject those same paths at the OS-browser boundary. Repository and other ordinary GitHub links retain external-browser routing. `/login/oauth/authorize` is observed in the VM trace and documented in [GitHub's OAuth flow](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps); login/session verification paths are covered for subsequent authentication, not claimed as observed in this failed VM attempt. Queries in fixtures contain dummy values only.
+
+The Node regression first failed on the observed authorization URL, then passed after the fix (9/9 tests). Independent Electron coverage exercises a real same-session sandboxed GitHub popup with offline fixture content, direct/redirect navigation with modern/legacy event arguments, and context-menu/IPC escape prevention. These checks do not authenticate a real GitHub account.
+
+Fresh test 5 EXE/MSI packages retain 1.3.0 with Windows build 1.3.0.5, visible title Authentication test 5 and redacted diagnostics. Deliver directly in build root after archiving old artifacts outside it. Test 5 includes test 4's sign-out fix. VM verification should cover GitHub login through password/verification/consent to the original Grok tab, then sign out and back in without restarting. Publication remains on hold.

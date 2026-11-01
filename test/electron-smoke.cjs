@@ -131,20 +131,25 @@ const path = require('node:path');
       webContents.getAllWebContents().filter(wc => wc.getType() === 'webview').forEach(wc => wc.closeDevTools());
     });
 
-    const authWindow = app.waitForEvent('window');
-    await app.evaluate(async ({ webContents }) => {
-      const guest = webContents.getAllWebContents().find(wc => wc.getType() === 'webview');
-      await guest.executeJavaScript("document.querySelector('#auth').click()", true);
-    });
-    await authWindow;
-    const auth = await app.evaluate(({ BrowserWindow, session }) => {
-      const popup = BrowserWindow.getAllWindows().find(win => win.webContents.getURL().startsWith('https://accounts.x.ai'));
-      return { url: popup.webContents.getURL(), sameSession: popup.webContents.session === session.fromPartition('persist:grok'),
-        node: popup.webContents.getLastWebPreferences().nodeIntegration };
-    });
-    assert.equal(auth.sameSession, true);
-    assert.equal(auth.node, false);
-    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().filter(win => win.webContents.getURL().startsWith('https:')).forEach(win => win.close()));
+    for (const provider of ['https://accounts.x.ai/sign-in', 'https://github.com/login/oauth/authorize?state=dummy']) {
+      const authWindow = app.waitForEvent('window');
+      await app.evaluate(async ({ webContents }, url) => {
+        const guest = webContents.getAllWebContents().find(wc => wc.getType() === 'webview');
+        await guest.executeJavaScript(`document.querySelector('#auth').href = ${JSON.stringify(url)}; document.querySelector('#auth').click()`, true);
+      }, provider);
+      const popupPage = await authWindow;
+      await popupPage.waitForURL(provider);
+      const auth = await app.evaluate(({ BrowserWindow, session }, url) => {
+        const popup = BrowserWindow.getAllWindows().find(win => win.webContents.getURL() === url);
+        return { sameSession: popup.webContents.session === session.fromPartition('persist:grok'),
+          node: popup.webContents.getLastWebPreferences().nodeIntegration,
+          sandbox: popup.webContents.getLastWebPreferences().sandbox };
+      }, provider);
+      assert.equal(auth.sameSession, true);
+      assert.equal(auth.node, false);
+      assert.equal(auth.sandbox, true);
+      await popupPage.close();
+    }
 
     // Replay the redacted manual navigation sequence into the installed main
     // handlers. Keep all real-account traffic out of this offline test.
@@ -180,8 +185,9 @@ const path = require('node:path');
     assert.equal(navigation.noEscapedRedirect, true);
     assert.equal(navigation.direct, true);
     assert.deepEqual(navigation.external, ['https://example.org/article']);
-    const signoutRoutes = require('./fixtures/grok-cookie-signout.json');
-    const signout = await app.evaluate(({ shell, webContents }, routes) => {
+    const authRoutes = [...require('./fixtures/grok-cookie-signout.json'),
+      ...require('./fixtures/github-auth-navigation.json')];
+    const authNavigation = await app.evaluate(({ shell, webContents }, routes) => {
       const guest = webContents.getAllWebContents().find(wc => wc.getType() === 'webview');
       const original = shell.openExternal;
       const external = [];
@@ -201,9 +207,9 @@ const path = require('node:path');
         }
         return { cancellations, external };
       } finally { shell.openExternal = original; }
-    }, signoutRoutes);
-    assert.deepEqual(signout.cancellations, Array(signoutRoutes.length * 4).fill(false));
-    assert.deepEqual(signout.external, []);
+    }, authRoutes);
+    assert.deepEqual(authNavigation.cancellations, Array(authRoutes.length * 4).fill(false));
+    assert.deepEqual(authNavigation.external, []);
 
     const finalGuard = await app.evaluate(async ({ shell, webContents, Menu, ipcMain }) => {
       const originalShell = shell.openExternal;
@@ -211,18 +217,22 @@ const path = require('node:path');
       const external = [];
       shell.openExternal = async url => { external.push(url); };
       try {
-        const url = 'https://accounts.youtube.com/accounts/SetSID?test=dummy';
         const guest = webContents.getAllWebContents().find(wc => wc.getType() === 'webview');
         let template;
         Menu.buildFromTemplate = items => { template = items; return { popup() {} }; };
-        guest.emit('context-menu', {}, { x: 10, y: 10, linkURL: url });
-        await template.find(item => item.label === 'Open Link in Browser').click();
+        for (const url of ['https://accounts.youtube.com/accounts/SetSID?test=dummy',
+          'https://github.com/login/oauth/authorize?state=dummy']) {
+          guest.emit('context-menu', {}, { x: 10, y: 10, linkURL: url });
+          await template.find(item => item.label === 'Open Link in Browser').click();
+        }
         return external;
       } finally { shell.openExternal = originalShell; Menu.buildFromTemplate = originalMenu; }
     });
     assert.deepEqual(finalGuard, []);
     assert.equal(await page.evaluate(() => window.desktop.invoke('open-external-url',
       'https://accounts.youtube.com/accounts/SetSID?test=dummy')), false);
+    assert.equal(await page.evaluate(() => window.desktop.invoke('open-external-url',
+      'https://github.com/login/oauth/authorize?state=dummy')), false);
 
 
     await page.locator('#info-btn').click();
@@ -238,7 +248,7 @@ const path = require('node:path');
     console.log(JSON.stringify({ result: 'PASS', executablePath, version,
       checks: ['sandbox/isolation', 'AOT off/on/off', 'background search tab', 'unique tabs', 'Ctrl+T and close',
         'authenticated stats', 'viewport fit', 'unsafe URL blocking', 'media consent denial/allow', 'Inspect Element',
-        'OAuth popup session', 'Google cookie handoffs', 'same-tab sign-out cookie handoffs', 'subframe redirect stays embedded', 'unknown redirect never escapes', 'About version', 'no renderer errors'] }, null, 2));
+        'OAuth popup session', 'Google cookie handoffs', 'GitHub login and verification navigation', 'same-tab sign-out cookie handoffs', 'subframe redirect stays embedded', 'unknown redirect never escapes', 'About version', 'no renderer errors'] }, null, 2));
   } finally {
     await app.close();
   }
