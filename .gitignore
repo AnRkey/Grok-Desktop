@@ -94,3 +94,6 @@ release.md
 # copyparty
 copyparty_1.19.22.exe
 >>>>>>> development
+
+# Local validation scratch files
+.tmp-audit.json

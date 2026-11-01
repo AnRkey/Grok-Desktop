@@ -1,4 +1,4 @@
-# Grok-Desktop v1.2.5
+# Grok-Desktop v1.3.0 (in testing)
 
 ## Description
 Grok-Desktop is an Electron-based desktop application for Windows 10/11 and Linux that wraps `grok.com`, providing desktop-application-like access to Grok with real-time API usage monitoring, multi-tab support, and seamless authentication for xAI, Google, and Apple accounts.
@@ -30,6 +30,8 @@ Grok-Desktop is an Electron-based desktop application for Windows 10/11 and Linu
 
 ## Download
 
+Version 1.3.0 is being tested on `development`. Public downloads below remain at 1.2.5 until VM approval.
+
 ### Windows
 - [Grok-Desktop_Installer-v1.2.5.exe](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.5/Grok-Desktop_Installer-v1.2.5.exe) - Windows installer (EXE)
 - [Grok-Desktop_Installer-v1.2.5.msi](https://github.com/AnRkey/Grok-Desktop/releases/download/v1.2.5/Grok-Desktop_Installer-v1.2.5.msi) - Windows installer (MSI)
@@ -54,7 +56,7 @@ Grok-Desktop is an Electron-based desktop application for Windows 10/11 and Linu
 
 ### For Building from Source
 - **Operating System**: Windows 10/11 or Linux
-- **Node.js**: LTS version (20.x recommended)
+- **Node.js**: LTS version (24.x required)
 - **Internet connection** for downloading dependencies
 
 ## Project Structure
@@ -63,8 +65,8 @@ Grok-Desktop/
 ├── src/                    # Main Electron application code
 │   ├── main.js            # Main Electron process
 │   ├── preload.js         # Preload script for renderer security
-│   ├── renderer.js        # Renderer process code
-│   ├── custom-tabs.js     # Custom tabs implementation
+│   ├── ui.js              # Application shell UI
+│   ├── url-policy.js      # URL and GPU policies
 │   ├── grok.ico           # Windows application icon
 │   └── grok.png           # Linux application icon
 ├── assets/                # Static assets
@@ -80,56 +82,21 @@ Grok-Desktop/
 ├── about.html            # About dialog HTML
 ├── package.json          # Node.js dependencies and build config
 ├── build.bat             # Windows build script
-├── build-linux.sh        # Linux build script
 ├── CHANGELOG.md          # Version history and changes
-├── LINUX_BUILD_GUIDE.md  # Detailed Linux build instructions
-├── new_features.md       # Security features documentation
 └── README.md            # This file
 ```
 
-<<<<<<< HEAD
-## Build Grok-Desktop
-1. Install Node.js from [nodejs.org](https://nodejs.org/).
-2. Clone this repository or download the files.
-3. Install dependencies if needed: `npm install`
-4. Build using npm scripts:
-   - Directory build (unpacked): `npm run build-dir`
-   - Portable executable: `npm run build-portable`
-   - Full installers (NSIS + MSI): `npm run build-installer`
 
-Notes:
-- These scripts use `npx electron-builder@latest` (no global install required).
-- All build outputs are written to the `build` directory.
-
-## Usage
-- After building, install `Grok-Desktop` with `Grok-Desktop_Installer-v1.2.3.exe` from the `build` directory
-- Launch `Grok-Desktop` from the Start Menu
-- Log in via `grok.com`, using Google, Apple, or xAI authentication as needed.
-- Use the + button in the top toolbar (or Ctrl+T) to add new tabs.
-- Click the AOT button in the top right to toggle always-on-top functionality.
-- Use keyboard shortcuts to work faster:
-  - Ctrl+T: Open a new tab
-  - Ctrl+Tab / Ctrl+Shift+Tab: Cycle through open tabs (next/previous)
-  - Ctrl+R: Reload the currently active tab
-  - Ctrl+I: Show information/about dialog
-
-## Keyboard Shortcuts
-- Ctrl+T: Open a new tab
-- Ctrl+Tab: Switch to the next tab
-- Ctrl+Shift+Tab: Switch to the previous tab
-- Ctrl+R: Reload the active tab (does not reload the entire app window)
-- Ctrl+I: Show information/about dialog
-=======
 ## Building from Source
 
 ### Prerequisites
-1. Install Node.js LTS (20.x recommended) from [nodejs.org](https://nodejs.org/)
+1. Install Node.js LTS (24.x required) from [nodejs.org](https://nodejs.org/)
 2. Clone this repository: `git clone https://github.com/AnRkey/Grok-Desktop.git`
 3. Navigate to the project: `cd Grok-Desktop`
-4. Install dependencies: `npm install`
+4. Install dependencies: `npm ci`
 
 ### Build Commands
->>>>>>> development
+
 
 #### Windows
 ```bash
@@ -145,20 +112,20 @@ npm run build-dir
 
 #### Linux
 ```bash
-# RPM + AppImage packages
+# RPM + DEB packages
 npm run build-linux
 
 # RPM only for RHEL/Rocky Linux
-npm run build-rhel
+npm run build-rpm
 
 # All platforms (Windows + Linux)
 npm run build-all
 ```
 
 **Notes:**
-- All scripts use `npx electron-builder@latest` (no global installation required)
+- Build scripts use the locked local `electron-builder`; publishing is disabled
 - Build outputs are written to the `build/` directory
-- For detailed Linux build instructions, see [LINUX_BUILD_GUIDE.md](LINUX_BUILD_GUIDE.md)
+- Run Linux packaging on Linux with `npm run build-linux`; the development workflow also builds RPM/DEB artifacts
 
 ## Installation
 
@@ -286,7 +253,7 @@ sudo apt install wmctrl
 **Solutions**:
 - Install build dependencies: `sudo dnf groupinstall "Development Tools"`
 - For RPM builds on Rocky Linux 10: `sudo dnf install libxcrypt-compat`
-- See [LINUX_BUILD_GUIDE.md](LINUX_BUILD_GUIDE.md) for detailed instructions
+- Run `npm ci` with Node.js 24 before building
 
 ### Providing Feedback
 Your feedback helps improve Grok-Desktop! Here's how to contribute:
@@ -349,7 +316,7 @@ sudo dnf install wmctrl    # Rocky Linux/RHEL/Fedora
 sudo apt install wmctrl    # Ubuntu/Debian
 ```
 
-### Recent Changes (v1.2.5)
+### Recent Changes (v1.2.5 public release)
 - **Bug Fix**: Fixed Usage Stats "Login required" error on Windows 11 (Issue #11)
   - API calls now execute in webview context with proper authentication
   - Thanks to Joshua Wang for identifying the root cause
@@ -359,7 +326,13 @@ For complete changelog, see [CHANGELOG.md](CHANGELOG.md).
 
 ## Changelog Summary
 
-### v1.2.5 (Latest)
+### v1.3.0 (In testing)
+- Electron 45.2.1 and locked, audited build dependencies
+- Restored Inspect Element and internal background tabs for search results
+- Correct GPU detection on Windows; AOT starts off and reflects window state
+- Isolated renderers, guarded IPC, parsed URL checks and consent for Grok media access
+
+### v1.2.5 (Latest public release)
 - 🐛 **Bug Fix**: Fixed Usage Stats "Login required" error on Windows 11
   - Resolved 403 API errors by executing fetch in authenticated webview context
   - Thanks to Joshua Wang (@JoshuaWang2211) for the bug report and solution
@@ -371,7 +344,7 @@ For complete changelog, see [CHANGELOG.md](CHANGELOG.md).
 - **v1.2.1**: Better dark mode, voice mode support
 - **v1.2.0**: WebRTC/audio support, CSP enhancements
 
-See [CHANGELOG.md](CHANGELOG.md) for complete version history.
+See [CHANGELOG.md](CHANGELOG.md) for complete version history and [the 1.3.0 test notes](docs/validation-1.3.0.md) for the VM checklist.
 
 ## Contributing
 
@@ -385,7 +358,9 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for:
 ```bash
 git clone https://github.com/AnRkey/Grok-Desktop.git
 cd Grok-Desktop
-npm install
+npm ci
+npm test
+npm run test:electron  # Isolated offline Electron regression checks
 npm start  # Run in development mode
 ```
 
@@ -401,7 +376,6 @@ This project is licensed under the GNU General Public License version 2.0 (GPL-2
 
 ### Third-Party Components
 - **Electron**: Cross-platform desktop app framework
-- **electron-tabs**: Multi-tab interface library
 - **wmctrl**: Linux window management (AOT functionality)
 
 ### Assets & Artwork
@@ -409,4 +383,4 @@ The `grok.ico` application icon was sourced online and converted for use in this
 
 ---
 
-**Grok-Desktop v1.2.5** - Making Grok accessible everywhere! 🚀
+**Grok-Desktop v1.3.0 (in testing)** - Making Grok accessible everywhere! 🚀

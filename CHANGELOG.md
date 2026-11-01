@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
 
+## [1.3.0] - Unreleased (VM approval pending)
+
+### Fixed
+- Windows hardware acceleration no longer uses Linux-only GPU probes (PR #33; report #26).
+- Search results requesting a new window open as background Grok tabs (#14).
+- Restore Inspect Element to context menus, including webviews (#13).
+- Preserve OAuth popup openers and the persistent login session (#25, #26; live login verification pending).
+- Start AOT off and synchronize its button with real window state (PR #35); fix Linux toggling off.
+- Fix Windows About file URLs, duplicate tab IDs, and content clipping below the toolbar.
+- Show unavailable usage services separately from authentication errors and clear stale warning colors.
+- Remove README merge markers and references to deleted build guides.
+
+### Security
+- Upgrade Electron from 39.1.2 to 45.2.1, including Chromium/Node and upstream security fixes.
+- Replace URL substring matching with exact parsed HTTPS host checks (CodeQL alert #6).
+- Centralize OS browser URL validation; block unsafe schemes, credentials and local/numeric hosts.
+- Enable sandboxing/context isolation and disable Node in the shell, webviews and OAuth popups.
+- Expose only allowlisted IPC through preload and validate the sending frame in main.
+- Restrict media to Grok with user consent; deny unrelated/device permissions and select screen-share sources explicitly.
+- Use execFile and native window IDs for Linux wmctrl; remote page titles never enter shell commands.
+- Lock build tools and patched ASAR, universal, minimatch and glob dependencies; remove unused electron-tabs and stale overrides.
+
+### Changed
+- Source version 1.3.0; public release and tag await VM approval.
+- Require Node.js 24 for development; correct package license metadata to GPL-2.0-only.
+- Build scripts use local electron-builder 26.18.0 with publication disabled.
+- Add independent policy and Electron runtime regression checks and development build artifacts.
+- Live-service reports #22, #25 and #26 need authenticated VM confirmation; #31 has no reproduction details.
+
 ## [1.2.5] - 2025-12-17
 
 ### Fixed
@@ -47,25 +76,6 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ### Changed
 - Bump version to 1.2.2
 
-## [Unreleased]
-
-### Added
-- Keyboard shortcuts in the app:
-  - Ctrl+T: open new tab
-  - Ctrl+Tab / Ctrl+Shift+Tab: cycle through open tabs (next/previous)
-  - Ctrl+R reloads the active tab
-  - Ctrl+I: open information/about dialog
-### Changed
-- Update Electron to 39.x (incrementally 36 → 37 → 38 → 39)
-- Use electron-builder via npx in npm scripts (no global install required)
-
-### Removed
-- Remove unused dependency: electron-store
-- Remove `brace-expansion` overrides after verification
-
-### Security
-- Verified `brace-expansion` advisories (CVE-2025-5889); ensured no affected versions in tree
-
 ## [1.2.1] - 2025-08-16
 
 ### Changed
@@ -98,7 +108,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ### Added
 - Initial pre-release of Grok Desktop
 
- [Unreleased]: https://github.com/AnRkey/Grok-Desktop/compare/v1.2.5...HEAD
+ [Unreleased]: https://github.com/AnRkey/Grok-Desktop/compare/v1.2.5...development
+[1.3.0]: https://github.com/AnRkey/Grok-Desktop/compare/v1.2.5...development
 [1.2.5]: https://github.com/AnRkey/Grok-Desktop/releases/tag/v1.2.5
 [1.2.4]: https://github.com/AnRkey/Grok-Desktop/releases/tag/v1.2.4
 [1.2.3]: https://github.com/AnRkey/Grok-Desktop/releases/tag/v1.2.3

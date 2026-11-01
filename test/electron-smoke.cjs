@@ -1,0 +1,166 @@
+const { _electron: electron } = require('playwright');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+
+(async () => {
+  const env = { ...process.env };
+  delete env.ELECTRON_RUN_AS_NODE;
+  const profile = path.resolve('.tmp', `smoke-profile-${Date.now()}`);
+  fs.mkdirSync(profile, { recursive: true });
+  const executablePath = process.env.GROK_TEST_EXECUTABLE || require('electron');
+  const args = [`--user-data-dir=${profile}`, '--host-resolver-rules=MAP * ~NOTFOUND', '--use-fake-device-for-media-stream'];
+  if (!process.env.GROK_TEST_EXECUTABLE) args.unshift('.');
+  const app = await electron.launch({ executablePath, args, env, timeout: 30000 });
+  const errors = [];
+  try {
+    const page = await app.firstWindow();
+    page.on('pageerror', error => { errors.push(error.message); console.error('Renderer:', error.message); });
+    await app.evaluate(async ({ session }) => {
+      await session.fromPartition('persist:grok').protocol.handle('https', request => {
+        if (request.url.endsWith('/rest/rate-limits')) {
+          return new Response(JSON.stringify({ totalTokens: 100,
+            lowEffortRateLimits: { remainingQueries: 50 },
+            highEffortRateLimits: { remainingQueries: 10, cost: 5 },
+            remainingQueries: 8, totalQueries: 10 }), {
+            headers: { 'content-type': 'application/json' }
+          });
+        }
+        return new Response('<!doctype html><title>Fixture Grok</title>' +
+          '<h1>Offline Grok fixture</h1><a id="search-result" target="_blank" href="https://grok.com/c/result">New Tab</a>' +
+          '<a id="auth" target="_blank" href="https://accounts.x.ai/sign-in">Sign in</a>' +
+          '<textarea id="prompt"></textarea><div style="width:320px;aspect-ratio:16/9;background:green" id="video"></div>', {
+          headers: { 'content-type': 'text/html' }
+        });
+      });
+    });
+    await page.waitForSelector('webview');
+    await app.evaluate(async ({ webContents }) => {
+      const guest = webContents.getAllWebContents().find(wc => wc.getType() === 'webview');
+      if (guest.isLoading()) await new Promise(resolve => guest.once('did-stop-loading', resolve));
+      await guest.loadURL('https://grok.com/fixture');
+    });
+    await page.waitForFunction(() => document.querySelector('.tab-title').textContent === 'Fixture Grok');
+    assert.equal(await page.evaluate(() => typeof require), 'undefined');
+    assert.equal(await page.evaluate(() => typeof window.desktop.invoke), 'function');
+    const version = await page.evaluate(() => window.desktop.invoke('get-app-version'));
+    assert.equal(version, '1.3.0');
+    const prefs = await app.evaluate(({ BrowserWindow, webContents }) => {
+      const win = BrowserWindow.getAllWindows()[0];
+      const guest = webContents.getAllWebContents().find(wc => wc.getType() === 'webview');
+      return { aot: win.isAlwaysOnTop(), shell: win.webContents.getLastWebPreferences(),
+        guest: guest.getLastWebPreferences() };
+    });
+    assert.equal(prefs.aot, false);
+    for (const preferences of [prefs.shell, prefs.guest]) {
+      assert.equal(preferences.nodeIntegration, false);
+      assert.equal(preferences.contextIsolation, true);
+      assert.equal(preferences.sandbox, true);
+    }
+    await page.locator('#aot-button').click();
+    await page.waitForFunction(() => document.querySelector('#aot-button').classList.contains('active'));
+    assert.equal(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isAlwaysOnTop()), true);
+    await page.locator('#aot-button').click();
+    await page.waitForFunction(() => !document.querySelector('#aot-button').classList.contains('active'));
+
+    const originalId = await page.locator('.tab.active').getAttribute('id');
+    await app.evaluate(async ({ webContents }) => {
+      const guest = webContents.getAllWebContents().find(wc => wc.getType() === 'webview');
+      await guest.executeJavaScript("document.querySelector('#search-result').click()", true);
+    });
+    await page.waitForFunction(() => document.querySelectorAll('.tab').length === 2);
+    assert.equal(await page.locator('.tab.active').getAttribute('id'), originalId);
+    const ids = await page.locator('.tab').evaluateAll(tabs => tabs.map(tab => tab.id));
+    assert.equal(new Set(ids).size, 2);
+
+    await page.locator('#usage-btn').click();
+    await page.waitForFunction(() => document.querySelector('#usage-low-effort').textContent === '50 / 100');
+    const geometry = await page.evaluate(() => {
+      const view = document.querySelector('.view.active webview').getBoundingClientRect();
+      return { bottom: view.bottom, height: innerHeight };
+    });
+    assert.ok(geometry.bottom <= geometry.height, 'content fits above the status bar');
+
+    await app.evaluate(({ webContents }) => {
+      const guest = webContents.getAllWebContents().find(wc => wc.getType() === 'webview');
+      guest.sendInputEvent({ type: 'keyDown', keyCode: 'T', modifiers: ['control'] });
+      guest.sendInputEvent({ type: 'keyUp', keyCode: 'T', modifiers: ['control'] });
+    });
+    await page.waitForFunction(() => document.querySelectorAll('.tab').length === 3 && document.querySelector('.tab.active .tab-title').textContent === 'Fixture Grok');
+    await page.locator('.tab.active .tab-close').click();
+    await page.waitForFunction(() => document.querySelectorAll('.tab').length === 2);
+    await page.locator('.tab').first().click();
+
+    const guestSecurity = await app.evaluate(async ({ webContents }) => {
+      const guest = webContents.getAllWebContents().find(wc => wc.getType() === 'webview');
+      return guest.executeJavaScript('({require: typeof require, bridge: typeof window.desktop})');
+    });
+    assert.deepEqual(guestSecurity, { require: 'undefined', bridge: 'undefined' });
+    assert.equal(await page.evaluate(() => window.desktop.invoke('open-external-url', 'file:///C:/Windows/System32/calc.exe')), false);
+    assert.equal(await page.evaluate(() => window.desktop.invoke('open-external-url', 'https://127.0.0.1')), false);
+    const media = await app.evaluate(async ({ dialog, webContents }) => {
+      const original = dialog.showMessageBox;
+      let prompts = 0;
+      const guest = webContents.getAllWebContents().find(wc => wc.getType() === 'webview');
+      const result = [];
+      try {
+        for (const response of [0, 1]) {
+          dialog.showMessageBox = async () => { prompts++; return { response }; };
+          result.push(await guest.executeJavaScript(`navigator.mediaDevices.getUserMedia({audio:true}).then(stream => {stream.getTracks().forEach(track => track.stop()); return 'allowed';}).catch(() => 'blocked')`));
+        }
+      } finally { dialog.showMessageBox = original; }
+      return { result, prompts };
+    });
+    assert.deepEqual(media, { result: ['blocked', 'allowed'], prompts: 2 });
+
+    const inspect = await app.evaluate(async ({ Menu, webContents }) => {
+      const original = Menu.buildFromTemplate;
+      let template;
+      Menu.buildFromTemplate = items => { template = items; return { popup() {} }; };
+      const guest = webContents.getAllWebContents().find(wc => wc.getType() === 'webview');
+      guest.emit('context-menu', {}, { x: 10, y: 10 });
+      Menu.buildFromTemplate = original;
+      const item = template.find(entry => entry.label === 'Inspect Element');
+      const opened = new Promise(resolve => guest.once('devtools-opened', resolve));
+      item.click();
+      await opened;
+      return !!item && guest.isDevToolsOpened();
+    });
+    assert.equal(inspect, true);
+    await app.evaluate(({ webContents }) => {
+      webContents.getAllWebContents().filter(wc => wc.getType() === 'webview').forEach(wc => wc.closeDevTools());
+    });
+
+    const authWindow = app.waitForEvent('window');
+    await app.evaluate(async ({ webContents }) => {
+      const guest = webContents.getAllWebContents().find(wc => wc.getType() === 'webview');
+      await guest.executeJavaScript("document.querySelector('#auth').click()", true);
+    });
+    await authWindow;
+    const auth = await app.evaluate(({ BrowserWindow, session }) => {
+      const popup = BrowserWindow.getAllWindows().find(win => win.webContents.getURL().startsWith('https://accounts.x.ai'));
+      return { url: popup.webContents.getURL(), sameSession: popup.webContents.session === session.fromPartition('persist:grok'),
+        node: popup.webContents.getLastWebPreferences().nodeIntegration };
+    });
+    assert.equal(auth.sameSession, true);
+    assert.equal(auth.node, false);
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().filter(win => win.webContents.getURL().startsWith('https:')).forEach(win => win.close()));
+
+    await page.locator('#info-btn').click();
+    await page.waitForFunction(() => document.querySelectorAll('.tab').length === 3 && document.querySelector('.tab.active .tab-title').textContent === 'About');
+    await app.evaluate(async ({ webContents }) => {
+      const about = webContents.getAllWebContents().find(wc => wc.getURL().includes('/about.html'));
+      const text = await about.executeJavaScript('document.body.textContent');
+      if (!text.includes('1.3.0')) throw new Error('About page version missing');
+    });
+    fs.mkdirSync('build', { recursive: true });
+    await page.screenshot({ path: path.resolve('build', 'smoke-1.3.0.png') });
+    assert.deepEqual(errors, []);
+    console.log(JSON.stringify({ result: 'PASS', executablePath, version,
+      checks: ['sandbox/isolation', 'AOT off/on/off', 'background search tab', 'unique tabs', 'Ctrl+T and close',
+        'authenticated stats', 'viewport fit', 'unsafe URL blocking', 'media consent denial/allow', 'Inspect Element',
+        'OAuth popup session', 'About version', 'no renderer errors'] }, null, 2));
+  } finally {
+    await app.close();
+  }
+})().catch(error => { console.error(error); process.exitCode = 1; });
