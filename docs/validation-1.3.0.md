@@ -172,3 +172,13 @@ Implementation e7cd4b3 is pushed on development. Ten Node regressions and real E
 - MSI: `build/Grok-Desktop_Installer-v1.3.0-auth-test-6.msi`; SHA-256 `43586205dbd7e3ece5bdac028b7ade1393ef6b1668371e2ab11e34f7b960af46`.
 
 No production code changed after the tested implementation. Real-service completion of the final logout route remains for the VM test; no release/tag/main merge is approved yet.
+
+### VM approval, release pause and About-page contributor credits
+
+John confirmed test 6 fixes Grok sign-out and authorized release preparation. He chose all nine historical package formats: Windows NSIS EXE, MSI, portable EXE, ZIP and 7z; Linux DEB, RPM, 7z and tar.gz. He then explicitly paused publication before any release or tag was created, and requested contributor GitHub aliases in About. Keep publication paused until he resumes it.
+
+About now credits @realvathy (GPU fix, PR #33; git display name yuunagi), @VectorJay666 (AOT fix, PR #35 co-author), and @JoshuaWang2211 (usage-statistics fix, issue #11 and prior release credits). The PR #35 commit's linked author @cursoragent is listed separately as code assistance. Existing developer credit stays in place. Handles were verified through GitHub commit/PR/issue metadata rather than inferred from email addresses; only included contributions are credited, with feature PRs still deferred.
+
+The Electron About check verifies each displayed handle and profile URL. A separate offline render checks the About page in light/dark themes and at a narrow viewport. Any final 1.3.0 packages must be rebuilt from this About-page change; earlier test 6/CI packages predate the credits.
+
+Verification completed: all ten Node regressions and the full local Electron integration suite pass, including the About handle/URL assertions. Independent headless Chrome rendering passes offline in light/dark themes at 1100x720 and light mode at 360x640, with no horizontal overflow or clipped credits; screenshots were visually inspected. No account login or normal user profile was used. Publication remains paused.

@@ -33,6 +33,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Lock build tools and patched ASAR, universal, minimatch and glob dependencies; remove unused electron-tabs and stale overrides.
 
 ### Changed
+- Credit contributors by their GitHub handles on the in-app About page.
 - Source version 1.3.0; public release and tag await VM approval.
 - Require Node.js 24 for development; correct package license metadata to GPL-2.0-only.
 - Build scripts use local electron-builder 26.18.0 with publication disabled.

@@ -240,11 +240,18 @@ const path = require('node:path');
 
     await page.locator('#info-btn').click();
     await page.waitForFunction(() => document.querySelectorAll('.tab').length === 3 && document.querySelector('.tab.active .tab-title').textContent === 'About');
-    await app.evaluate(async ({ webContents }) => {
+    const aboutCredits = await app.evaluate(async ({ webContents }) => {
       const about = webContents.getAllWebContents().find(wc => wc.getURL().includes('/about.html'));
       const text = await about.executeJavaScript('document.body.textContent');
       if (!text.includes('1.3.0')) throw new Error('About page version missing');
+      return about.executeJavaScript(`Array.from(document.querySelectorAll('.credits a'), link => ({ text: link.textContent, href: link.href }))`);
     });
+    assert.deepEqual(aboutCredits, [
+      { text: '@realvathy', href: 'https://github.com/realvathy' },
+      { text: '@VectorJay666', href: 'https://github.com/VectorJay666' },
+      { text: '@JoshuaWang2211', href: 'https://github.com/JoshuaWang2211' },
+      { text: '@cursoragent', href: 'https://github.com/cursoragent' }
+    ]);
     fs.mkdirSync('build', { recursive: true });
     await page.screenshot({ path: path.resolve('build', 'smoke-1.3.0.png') });
     assert.deepEqual(errors, []);
